@@ -10,7 +10,7 @@ KeyLearner is an Android music education app that helps users learn chord progre
 - Kotlin
 - Jetpack Compose (Material3)
 - MVVM Architecture
-- MPAndroidChart for score visualization
+- MPAndroidChart for score visualisation
 - DataStore for settings persistence
 
 **Package:** `com.example.keylearner`

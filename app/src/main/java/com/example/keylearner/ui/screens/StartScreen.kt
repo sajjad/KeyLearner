@@ -303,7 +303,7 @@ private fun DelaySection(
                     label = delay.toString(),
                     isSelected = selectedDelay == delay,
                     onClick = { onDelaySelected(delay) },
-                    selectedColor = MaterialTheme.colorScheme.tertiary,
+                    selectedColor = Green600,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -321,7 +321,7 @@ private fun DelaySection(
                     label = delay.toInt().toString(),
                     isSelected = selectedDelay == delay,
                     onClick = { onDelaySelected(delay) },
-                    selectedColor = MaterialTheme.colorScheme.tertiary,
+                    selectedColor = Green600,
                     modifier = Modifier.weight(1f)
                 )
             }

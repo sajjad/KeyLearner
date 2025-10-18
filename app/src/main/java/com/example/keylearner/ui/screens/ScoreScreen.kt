@@ -275,7 +275,7 @@ fun ScoreScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Progress visualization (shown when positions are selected in All Time view)
+            // Progress visualisation (shown when positions are selected in All Time view)
             if (viewMode == ViewMode.ALL_TIME && selectedPositions.isNotEmpty() && progressData.isNotEmpty()) {
 
                 Card(
@@ -342,7 +342,7 @@ fun ScoreScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Purple600
+                    containerColor = SkyBlue600
                 )
             ) {
                 Text(
@@ -654,7 +654,7 @@ private fun PositionSelectorCard(
 }
 
 /**
- * Line chart for progress visualization (multi-line support)
+ * Line chart for progress visualisation (multi-line support)
  */
 @Composable
 fun LineChartComposable(

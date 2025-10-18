@@ -1,5 +1,9 @@
 package com.example.keylearner.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +68,27 @@ fun AppNavigation(
         startDestination = Screen.Start.route
     ) {
         // Start Screen - Game configuration
-        composable(Screen.Start.route) {
+        composable(
+            route = Screen.Start.route,
+            enterTransition = {
+                fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(300)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(300)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(300)
+                )
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(300))
+            }
+        ) {
             StartScreen(
                 onStartGame = {
                     navController.navigate(Screen.Game.route)
@@ -78,7 +102,30 @@ fun AppNavigation(
         }
 
         // Game Screen - Chord learning gameplay
-        composable(Screen.Game.route) {
+        composable(
+            route = Screen.Game.route,
+            enterTransition = {
+                fadeIn(animationSpec = tween(300)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(300)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(300)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(300))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(300)
+                )
+            }
+        ) {
             val gameViewModel: GameViewModel = viewModel()
 
             GameScreen(
@@ -99,7 +146,27 @@ fun AppNavigation(
         }
 
         // Score Screen - Results and statistics
-        composable(Screen.Score.route) {
+        composable(
+            route = Screen.Score.route,
+            enterTransition = {
+                fadeIn(animationSpec = tween(400)) + slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(400)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(300))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(300))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(300)
+                )
+            }
+        ) {
             ScoreScreen(
                 currentGameScores = currentGameScores,
                 onReplay = {

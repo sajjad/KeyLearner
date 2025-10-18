@@ -61,7 +61,7 @@ dependencies {
     // DataStore for settings persistence
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // MPAndroidChart for score visualization
+    // MPAndroidChart for score visualisation
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     // Testing
