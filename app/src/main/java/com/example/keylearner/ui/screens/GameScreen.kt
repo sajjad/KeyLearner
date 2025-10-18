@@ -1,5 +1,6 @@
 package com.example.keylearner.ui.screens
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +61,8 @@ fun GameScreen(
     }
 
     val state = gameState!!
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = Modifier
@@ -69,128 +73,264 @@ fun GameScreen(
                 )
             )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // Quit Button
+        if (isLandscape) {
+            // Landscape Layout: Left = Key/Position, Right = Choices
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(
-                    onClick = onQuitToStart,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Quit to Start")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Current Key Display
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
+                // Left side: Key and Position
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .weight(0.4f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Current Key",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = state.getCurrentKeyDisplay(),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Purple600
-                    )
-                    Text(
-                        text = "Question ${state.questionsAsked + 1} of ${settings.count}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
+                    // Quit Button
+                    Button(
+                        onClick = onQuitToStart,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Quit", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    // Current Key Display
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Current Key",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = state.getCurrentKeyDisplay(),
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Purple600
+                            )
+                            Text(
+                                text = "Question ${state.questionsAsked + 1} of ${settings.count}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    // Current Position Display
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Chord Position",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = state.currentPosition.toString(),
+                                style = MaterialTheme.typography.displayLarge.copy(
+                                    fontSize = 72.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (settings.delay > 0) {
+                                Text(
+                                    text = "Next: ${String.format("%.1f", state.countdown)}s",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Right side: Answer Choices
+                Card(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .fillMaxHeight(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    if (settings.limitChoices) {
+                        LimitedChoicesMode(
+                            shuffledChords = state.shuffledChords,
+                            onChordSelected = { chord ->
+                                val result = viewModel.submitAnswer(chord)
+                                if (result is GameResult.GameComplete) {
+                                    onGameComplete()
+                                }
+                            },
+                            isLandscape = true
+                        )
+                    } else {
+                        FullChoicesMode(
+                            selectedAnswer = selectedAnswer,
+                            onNoteSelected = viewModel::selectNote,
+                            onQualitySelected = viewModel::selectQuality,
+                            onAccidentalSelected = viewModel::selectAccidental,
+                            onSubmit = {
+                                val result = viewModel.submitComposedAnswer()
+                                if (result is GameResult.GameComplete) {
+                                    onGameComplete()
+                                }
+                            },
+                            isLandscape = true
+                        )
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Current Position Display
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        } else {
+            // Portrait Layout: Original vertical layout
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // Quit Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Text(
-                        text = "Chord Position",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = state.currentPosition.toString(),
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontSize = 80.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    if (settings.delay > 0) {
+                    Button(
+                        onClick = onQuitToStart,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Quit to Start")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Current Key Display
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = "Next in: ${String.format("%.1f", state.countdown)}s",
+                            text = "Current Key",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = state.getCurrentKeyDisplay(),
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = Purple600
+                        )
+                        Text(
+                            text = "Question ${state.questionsAsked + 1} of ${settings.count}",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Answer Choices
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                if (settings.limitChoices) {
-                    LimitedChoicesMode(
-                        shuffledChords = state.shuffledChords,
-                        onChordSelected = { chord ->
-                            val result = viewModel.submitAnswer(chord)
-                            if (result is GameResult.GameComplete) {
-                                onGameComplete()
-                            }
+                // Current Position Display
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Chord Position",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = state.currentPosition.toString(),
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontSize = 80.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (settings.delay > 0) {
+                            Text(
+                                text = "Next in: ${String.format("%.1f", state.countdown)}s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
                         }
-                    )
-                } else {
-                    FullChoicesMode(
-                        selectedAnswer = selectedAnswer,
-                        onNoteSelected = viewModel::selectNote,
-                        onQualitySelected = viewModel::selectQuality,
-                        onAccidentalSelected = viewModel::selectAccidental,
-                        onSubmit = {
-                            val result = viewModel.submitComposedAnswer()
-                            if (result is GameResult.GameComplete) {
-                                onGameComplete()
-                            }
-                        }
-                    )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Answer Choices
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    if (settings.limitChoices) {
+                        LimitedChoicesMode(
+                            shuffledChords = state.shuffledChords,
+                            onChordSelected = { chord ->
+                                val result = viewModel.submitAnswer(chord)
+                                if (result is GameResult.GameComplete) {
+                                    onGameComplete()
+                                }
+                            },
+                            isLandscape = false
+                        )
+                    } else {
+                        FullChoicesMode(
+                            selectedAnswer = selectedAnswer,
+                            onNoteSelected = viewModel::selectNote,
+                            onQualitySelected = viewModel::selectQuality,
+                            onAccidentalSelected = viewModel::selectAccidental,
+                            onSubmit = {
+                                val result = viewModel.submitComposedAnswer()
+                                if (result is GameResult.GameComplete) {
+                                    onGameComplete()
+                                }
+                            },
+                            isLandscape = false
+                        )
+                    }
                 }
             }
         }
@@ -200,14 +340,23 @@ fun GameScreen(
 @Composable
 private fun LimitedChoicesMode(
     shuffledChords: List<Chord>,
-    onChordSelected: (Chord) -> Unit
+    onChordSelected: (Chord) -> Unit,
+    isLandscape: Boolean = false
 ) {
-    Column(
-        modifier = Modifier
+    val modifier = if (isLandscape) {
+        Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    } else {
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = if (isLandscape) Arrangement.Center else Arrangement.spacedBy(12.dp)
     ) {
         shuffledChords.chunked(2).forEach { rowChords ->
             Row(
@@ -219,14 +368,17 @@ private fun LimitedChoicesMode(
                         onClick = { onChordSelected(chord) },
                         modifier = Modifier
                             .weight(1f)
-                            .height(64.dp),
+                            .height(if (isLandscape) 56.dp else 64.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Purple600
                         )
                     ) {
                         Text(
                             text = chord.displayName(),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = if (isLandscape)
+                                MaterialTheme.typography.titleMedium
+                            else
+                                MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -235,6 +387,9 @@ private fun LimitedChoicesMode(
                 if (rowChords.size < 2) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
+            }
+            if (isLandscape) {
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -246,27 +401,42 @@ private fun FullChoicesMode(
     onNoteSelected: (String) -> Unit,
     onQualitySelected: (String) -> Unit,
     onAccidentalSelected: (String) -> Unit,
-    onSubmit: () -> Unit
+    onSubmit: () -> Unit,
+    isLandscape: Boolean = false
 ) {
     // Shuffle notes once to prevent users from counting positions
     val shuffledNotes = remember { listOf("A", "B", "C", "D", "E", "F", "G").shuffled() }
 
-    Column(
-        modifier = Modifier
+    val modifier = if (isLandscape) {
+        Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    } else {
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    }
+
+    val spacing = if (isLandscape) 8.dp else 16.dp
+    val buttonHeight = if (isLandscape) 44.dp else 48.dp
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = if (isLandscape) Arrangement.Center else Arrangement.spacedBy(spacing)
     ) {
         // Note Selection
         Text(
             text = "Note",
-            style = MaterialTheme.typography.titleMedium,
+            style = if (isLandscape)
+                MaterialTheme.typography.titleSmall
+            else
+                MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             shuffledNotes.forEach { note ->
                 SelectionButton(
@@ -274,20 +444,26 @@ private fun FullChoicesMode(
                     isSelected = selectedAnswer.note == note,
                     onClick = { onNoteSelected(note) },
                     selectedColor = Purple600,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    height = buttonHeight
                 )
             }
         }
 
+        Spacer(modifier = Modifier.height(spacing))
+
         // Quality Selection
         Text(
             text = "Chord Quality",
-            style = MaterialTheme.typography.titleMedium,
+            style = if (isLandscape)
+                MaterialTheme.typography.titleSmall
+            else
+                MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             listOf(
                 "M" to "M",
@@ -299,20 +475,26 @@ private fun FullChoicesMode(
                     isSelected = selectedAnswer.quality == value,
                     onClick = { onQualitySelected(value) },
                     selectedColor = Blue600,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    height = buttonHeight
                 )
             }
         }
 
+        Spacer(modifier = Modifier.height(spacing))
+
         // Accidental Selection
         Text(
             text = "Accidental",
-            style = MaterialTheme.typography.titleMedium,
+            style = if (isLandscape)
+                MaterialTheme.typography.titleSmall
+            else
+                MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             listOf(
                 "Natural" to "",
@@ -324,19 +506,20 @@ private fun FullChoicesMode(
                     isSelected = selectedAnswer.accidental == value,
                     onClick = { onAccidentalSelected(value) },
                     selectedColor = Green600,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    height = buttonHeight
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(if (isLandscape) 12.dp else 16.dp))
 
         // Submit Button
         Button(
             onClick = onSubmit,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(if (isLandscape) 48.dp else 56.dp),
             enabled = selectedAnswer.isComplete(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Green600
@@ -344,7 +527,10 @@ private fun FullChoicesMode(
         ) {
             Text(
                 text = "Submit Answer",
-                style = MaterialTheme.typography.titleLarge,
+                style = if (isLandscape)
+                    MaterialTheme.typography.titleMedium
+                else
+                    MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -357,11 +543,12 @@ private fun SelectionButton(
     isSelected: Boolean,
     onClick: () -> Unit,
     selectedColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    height: androidx.compose.ui.unit.Dp = 48.dp
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
+        modifier = modifier.height(height),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) selectedColor else Color.LightGray,
             contentColor = if (isSelected) Color.White else Color.DarkGray
