@@ -59,7 +59,7 @@ fun StartScreen(
         ) {
             // Title
             Text(
-                text = "Chord Learning Game",
+                text = "Learn Keys",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 32.sp

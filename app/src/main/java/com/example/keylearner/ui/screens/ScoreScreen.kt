@@ -654,9 +654,7 @@ fun LineChartComposable(
                 val lineDataSet = com.github.mikephil.charting.data.LineDataSet(entries, chordLabel).apply {
                     this.color = color.toArgb()
                     lineWidth = 3f
-                    setCircleColor(color.toArgb())
-                    circleRadius = 4f
-                    setDrawCircleHole(false)
+                    setDrawCircles(false)  // Disable data point markers to prevent clutter when many data points
                     setDrawValues(false)  // Disable values on points (too cluttered with multiple lines)
 
                     // Apply different line styles for distinction
