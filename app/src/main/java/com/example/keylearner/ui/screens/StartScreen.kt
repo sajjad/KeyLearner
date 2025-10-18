@@ -127,7 +127,9 @@ fun StartScreen(
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SkyBlue600,
-                    disabledContainerColor = SkyBlue600.copy(alpha = 0.5f)
+                    disabledContainerColor = SkyBlue600.copy(alpha = 0.5f),
+                    contentColor = BlueLight,
+                    disabledContentColor = BlueLight
                 ),
                 enabled = canStart
             ) {

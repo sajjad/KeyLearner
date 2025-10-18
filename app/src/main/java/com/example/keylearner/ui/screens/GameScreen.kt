@@ -379,7 +379,8 @@ private fun LimitedChoicesMode(
                                 MaterialTheme.typography.titleMedium
                             else
                                 MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = BlueLight
                         )
                     }
                 }
