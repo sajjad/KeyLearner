@@ -253,6 +253,13 @@ fun ScoreScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Define position colors (used for progress chart and position selector)
+            val positionColors = listOf(
+                CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
+                Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
+                Color(0xFF34495E)
+            )
+
             // Position Selector (All Time view only)
             if (viewMode == ViewMode.ALL_TIME && selectedKey != null) {
                 PositionSelectorCard(
@@ -261,7 +268,8 @@ fun ScoreScreen(
                     onPositionToggled = { position ->
                         viewModel.togglePosition(position)
                     },
-                    chartData = chartData
+                    chartData = chartData,
+                    positionColors = positionColors
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -269,12 +277,6 @@ fun ScoreScreen(
 
             // Progress visualization (shown when positions are selected in All Time view)
             if (viewMode == ViewMode.ALL_TIME && selectedPositions.isNotEmpty() && progressData.isNotEmpty()) {
-                // Define position colors
-                val positionColors = listOf(
-                    CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
-                    Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
-                    Color(0xFF34495E)
-                )
 
                 Card(
                     modifier = Modifier
@@ -527,7 +529,8 @@ private fun PositionSelectorCard(
     selectedKey: String,
     selectedPositions: Set<Int>,
     onPositionToggled: (Int) -> Unit,
-    chartData: List<ChartBarData>
+    chartData: List<ChartBarData>,
+    positionColors: List<Color>
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -548,14 +551,45 @@ private fun PositionSelectorCard(
             ) {
                 for (position in 1..4) {
                     val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+                    val lineColor = positionColors[position - 1]
                     FilterChip(
                         selected = position in selectedPositions,
                         onClick = { onPositionToggled(position) },
-                        label = { Text(chordLabel) },
+                        label = {
+                            Text(
+                                text = chordLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1
+                            )
+                        },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(
+                                        color = Color(0xFFEEEEEE),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = lineColor,
+                                            shape = androidx.compose.foundation.shape.CircleShape
+                                        )
+                                )
+                            }
+                        },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Teal600,
                             selectedLabelColor = Color.White
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = position in selectedPositions
                         )
                     )
                 }
@@ -570,14 +604,45 @@ private fun PositionSelectorCard(
             ) {
                 for (position in 5..7) {
                     val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+                    val lineColor = positionColors[position - 1]
                     FilterChip(
                         selected = position in selectedPositions,
                         onClick = { onPositionToggled(position) },
-                        label = { Text(chordLabel) },
+                        label = {
+                            Text(
+                                text = chordLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1
+                            )
+                        },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(
+                                        color = Color(0xFFEEEEEE),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = lineColor,
+                                            shape = androidx.compose.foundation.shape.CircleShape
+                                        )
+                                )
+                            }
+                        },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Teal600,
                             selectedLabelColor = Color.White
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = position in selectedPositions
                         )
                     )
                 }
