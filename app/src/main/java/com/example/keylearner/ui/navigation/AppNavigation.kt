@@ -8,14 +8,20 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.keylearner.ui.screens.GameScreen
 import com.example.keylearner.ui.screens.StartScreen
+import com.example.keylearner.viewmodel.StartScreenViewModel
 
 /**
  * Main navigation setup for the KeyLearner app
@@ -29,6 +35,20 @@ import com.example.keylearner.ui.screens.StartScreen
 fun AppNavigation(
     navController: NavHostController = rememberNavController()
 ) {
+    // Shared ViewModel to access settings across navigation
+    val context = LocalContext.current
+    val startScreenViewModel: StartScreenViewModel = viewModel(
+        factory = androidx.lifecycle.viewmodel.compose.viewModel<StartScreenViewModel>().javaClass.let {
+            object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return StartScreenViewModel(context.applicationContext as android.app.Application) as T
+                }
+            }
+        }
+    )
+    val settings by startScreenViewModel.settings.collectAsState()
+
     NavHost(
         navController = navController,
         startDestination = Screen.Start.route
@@ -44,7 +64,8 @@ fun AppNavigation(
 
         // Game Screen - Chord learning gameplay
         composable(Screen.Game.route) {
-            PlaceholderGameScreen(
+            GameScreen(
+                settings = settings,
                 onQuitToStart = {
                     navController.popBackStack(Screen.Start.route, inclusive = false)
                 },
@@ -74,42 +95,6 @@ fun AppNavigation(
 }
 
 // Placeholder screens - will be replaced with actual implementations in later phases
-
-@Composable
-private fun PlaceholderGameScreen(
-    onQuitToStart: () -> Unit,
-    onGameComplete: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Game Screen",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Text(
-            text = "Chord learning game will go here",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-        Button(
-            onClick = onGameComplete,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Complete Game (Placeholder)")
-        }
-        Button(
-            onClick = onQuitToStart,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Quit to Start")
-        }
-    }
-}
 
 @Composable
 private fun PlaceholderScoreScreen(

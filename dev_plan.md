@@ -105,10 +105,10 @@ com.example.keylearner/
 ---
 
 ## Phase 6: Game Screen Implementation
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ### Tasks:
-- [ ] **GameViewModel**:
+- [x] **GameViewModel**:
   - Initialise game state from settings
   - Implement countdown timer using Kotlin Coroutines/Flow
   - Generate random chord positions
@@ -116,7 +116,8 @@ com.example.keylearner/
   - Handle answer checking with enharmonic equivalence
   - Track progress and advance through keys
   - Update scores in real-time
-- [ ] **GameScreen Composable**:
+  - Methods for both limited and full choice modes
+- [x] **GameScreen Composable**:
   - Current key display (top)
   - Chord position number (large, centre)
   - Countdown timer display
@@ -125,7 +126,8 @@ com.example.keylearner/
     - **Limited Mode**: Grid of 7 shuffled chords from current key
     - **Full Mode**: Note selection (A-G), Quality (M/m/dim), Accidental (♮/#/♭), Submit button
   - Quit button to return to start
-- [ ] Handle answer submission and state updates
+- [x] Handle answer submission and state updates
+- [x] Integrate GameScreen into AppNavigation with shared settings
 
 ---
 
@@ -133,22 +135,37 @@ com.example.keylearner/
 **Status:** ⏳ Pending
 
 ### Tasks:
+- [ ] **ScoreRepository**: DataStore/Room implementation for historical scores
+  - Save game scores after each session
+  - Load historical scores by key
+  - Aggregate scores across all games for cumulative view
+  - Store timestamp with each game session
 - [ ] **ScoreViewModel**:
-  - Process scores into chart data format
+  - Process current game scores into chart data format
+  - Load and aggregate historical scores for all-time view
+  - Toggle between "Current Game" and "All Time" modes
   - Generate chord labels (e.g., "1-C", "2-Dm")
   - Handle key selection for chart display
+  - Provide cumulative statistics (total games played, overall accuracy, etc.)
 - [ ] **ScoreScreen Composable**:
-  - Key dropdown/selector showing all played keys
+  - **View Mode Toggle**: Calendar icon button to switch between:
+    - **Current Game** (default): Shows scores from just-completed game
+    - **All Time**: Shows cumulative scores across all previous games
+  - Key dropdown/selector showing all played keys (filtered by view mode)
   - MPAndroidChart integration:
     - Stacked bar chart component
     - X-axis: Chord positions with labels
     - Y-axis: Count
     - Green bars for correct (#27ae60)
     - Orange bars for wrong (#f39c12)
-    - Labels showing "right/wrong" counts
+    - Labels showing "correct/wrong" counts on bars
+  - Statistics panel:
+    - Current game: Accuracy percentage, total questions
+    - All time: Total games played, overall accuracy, most practised keys
   - "Replay with Same Settings" button
   - "Back to Start Screen" button
 - [ ] Create `BarChartComposable` wrapper for MPAndroidChart
+- [ ] Save current game scores to repository when entering Score screen
 
 ---
 
