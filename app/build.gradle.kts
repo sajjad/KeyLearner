@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sajjadamjad.keylearner"
+    namespace = "com.example.keylearner"
     compileSdk = 36
 
     defaultConfig {
