@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -247,6 +248,9 @@ private fun FullChoicesMode(
     onAccidentalSelected: (String) -> Unit,
     onSubmit: () -> Unit
 ) {
+    // Shuffle notes once to prevent users from counting positions
+    val shuffledNotes = remember { listOf("A", "B", "C", "D", "E", "F", "G").shuffled() }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -264,7 +268,7 @@ private fun FullChoicesMode(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("A", "B", "C", "D", "E", "F", "G").forEach { note ->
+            shuffledNotes.forEach { note ->
                 SelectionButton(
                     label = note,
                     isSelected = selectedAnswer.note == note,

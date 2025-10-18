@@ -118,6 +118,7 @@ com.example.keylearner/
   - Track progress and advance through keys
   - Update scores in real-time
   - Methods for both limited and full choice modes
+  - Shuffle note names (A-G) in full mode to prevent position counting
 - [x] **GameScreen Composable**:
   - Current key display (top)
   - Chord position number (large, centre)
@@ -125,10 +126,11 @@ com.example.keylearner/
   - Question progress counter
   - Two answer modes:
     - **Limited Mode**: Grid of 7 shuffled chords from current key
-    - **Full Mode**: Note selection (A-G), Quality (M/m/dim), Accidental (♮/#/♭), Submit button
+    - **Full Mode**: Note selection (A-G shuffled), Quality (M/m/dim), Accidental (♮/#/♭), Submit button
   - Quit button to return to start
 - [x] Handle answer submission and state updates
 - [x] Integrate GameScreen into AppNavigation with shared settings
+- [x] **Note Shuffling Enhancement**: In full choice mode, shuffle the A-G note buttons to prevent users from counting positions from the key note
 
 ---
 
