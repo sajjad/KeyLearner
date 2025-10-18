@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.keylearner"
+    namespace = "com.sajjadamjad.keylearner"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.keylearner"
+        applicationId = "com.sajjadamjad.keylearner"
         minSdk = 33
         targetSdk = 36
         versionCode = 1
