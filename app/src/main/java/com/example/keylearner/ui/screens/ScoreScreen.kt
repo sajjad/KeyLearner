@@ -40,7 +40,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScoreScreen(
-    currentGameScores: GameScores,
+    currentGameScores: GameScores?,
     onReplay: () -> Unit,
     onBackToStart: () -> Unit,
     viewModel: ScoreViewModel = viewModel()
@@ -50,17 +50,22 @@ fun ScoreScreen(
     val chartData by viewModel.chartData.collectAsState()
     val cumulativeStats by viewModel.cumulativeStats.collectAsState()
 
-    var availableKeys by remember { mutableStateOf(currentGameScores.getPlayedKeys()) }
+    var availableKeys by remember { mutableStateOf(currentGameScores?.getPlayedKeys() ?: emptyList()) }
 
-    // Initialize with current game scores
+    // Initialize with current game scores (if provided)
     LaunchedEffect(currentGameScores) {
-        viewModel.setCurrentGameScores(currentGameScores)
+        if (currentGameScores != null) {
+            viewModel.setCurrentGameScores(currentGameScores)
+        } else {
+            // No current game scores - switch to All Time view
+            viewModel.setViewModeToAllTime()
+        }
     }
 
     // Update available keys when view mode changes
     LaunchedEffect(viewMode) {
         availableKeys = when (viewMode) {
-            ViewMode.CURRENT_GAME -> currentGameScores.getPlayedKeys()
+            ViewMode.CURRENT_GAME -> currentGameScores?.getPlayedKeys() ?: emptyList()
             ViewMode.ALL_TIME -> {
                 viewModel.loadAllTimeKeys { keys ->
                     availableKeys = keys
@@ -96,7 +101,7 @@ fun ScoreScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Game Results",
+                    text = if (currentGameScores != null) "Game Results" else "Historical Statistics",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 32.sp
@@ -104,37 +109,41 @@ fun ScoreScreen(
                     color = Green600
                 )
 
-                // View Mode Toggle Button
-                IconButton(
-                    onClick = { viewModel.toggleViewMode() },
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            color = if (viewMode == ViewMode.ALL_TIME) Teal600 else Color.LightGray,
-                            shape = MaterialTheme.shapes.medium
+                // View Mode Toggle Button (only shown if there's a current game)
+                if (currentGameScores != null) {
+                    IconButton(
+                        onClick = { viewModel.toggleViewMode() },
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                color = if (viewMode == ViewMode.ALL_TIME) Teal600 else Color.LightGray,
+                                shape = MaterialTheme.shapes.medium
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Toggle All Time View",
+                            tint = if (viewMode == ViewMode.ALL_TIME) Color.White else Color.DarkGray,
+                            modifier = Modifier.size(32.dp)
                         )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Toggle All Time View",
-                        tint = if (viewMode == ViewMode.ALL_TIME) Color.White else Color.DarkGray,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // View Mode Label (only shown if there's a current game)
+            if (currentGameScores != null) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // View Mode Label
-            Text(
-                text = when (viewMode) {
-                    ViewMode.CURRENT_GAME -> "Current Game"
-                    ViewMode.ALL_TIME -> "All Time"
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                fontWeight = FontWeight.Medium
-            )
+                Text(
+                    text = when (viewMode) {
+                        ViewMode.CURRENT_GAME -> "Current Game"
+                        ViewMode.ALL_TIME -> "All Time"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -238,23 +247,26 @@ fun ScoreScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Action Buttons
-            Button(
-                onClick = onReplay,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Green600
-                )
-            ) {
-                Text(
-                    text = "Replay with Same Settings",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            // Only show Replay button if there's a current game
+            if (currentGameScores != null) {
+                Button(
+                    onClick = onReplay,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Green600
+                    )
+                ) {
+                    Text(
+                        text = "Replay with Same Settings",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             Button(
                 onClick = onBackToStart,
@@ -429,6 +441,9 @@ fun BarChartComposable(
             val barData = BarData(stackedDataSet).apply {
                 barWidth = 0.5f
             }
+
+            // Update X-axis labels for the new key
+            chart.xAxis.valueFormatter = IndexAxisValueFormatter(data.map { it.label })
 
             chart.data = barData
             chart.invalidate()

@@ -68,6 +68,11 @@ fun AppNavigation(
             StartScreen(
                 onStartGame = {
                     navController.navigate(Screen.Game.route)
+                },
+                onViewHistory = {
+                    // Navigate to Score screen without current game scores (will show All Time view)
+                    currentGameScores = null
+                    navController.navigate(Screen.Score.route)
                 }
             )
         }
@@ -95,28 +100,17 @@ fun AppNavigation(
 
         // Score Screen - Results and statistics
         composable(Screen.Score.route) {
-            val scores = currentGameScores
-            if (scores != null) {
-                ScoreScreen(
-                    currentGameScores = scores,
-                    onReplay = {
-                        navController.navigate(Screen.Game.route) {
-                            popUpTo(Screen.Start.route)
-                        }
-                    },
-                    onBackToStart = {
-                        navController.popBackStack(Screen.Start.route, inclusive = false)
+            ScoreScreen(
+                currentGameScores = currentGameScores,
+                onReplay = {
+                    navController.navigate(Screen.Game.route) {
+                        popUpTo(Screen.Start.route)
                     }
-                )
-            } else {
-                // Fallback if no scores available
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No scores available")
+                },
+                onBackToStart = {
+                    navController.popBackStack(Screen.Start.route, inclusive = false)
                 }
-            }
+            )
         }
     }
 }

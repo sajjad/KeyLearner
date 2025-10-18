@@ -99,6 +99,7 @@ com.example.keylearner/
   - Delay selection (0.5 to 20 seconds)
   - "Limit Choices to Key" toggle
   - Start Game button with validation
+  - View History button to access historical scores
 - [x] Style with gradient backgrounds and proper spacing
 - [x] Integrate into AppNavigation
 

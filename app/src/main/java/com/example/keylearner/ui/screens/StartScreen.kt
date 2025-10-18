@@ -37,6 +37,7 @@ import com.example.keylearner.viewmodel.StartScreenViewModel
 @Composable
 fun StartScreen(
     onStartGame: () -> Unit,
+    onViewHistory: () -> Unit,
     viewModel: StartScreenViewModel = viewModel()
 ) {
     val settings by viewModel.settings.collectAsState()
@@ -132,6 +133,25 @@ fun StartScreen(
             ) {
                 Text(
                     text = if (canStart) "Start Game" else "Select at least one key",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // View History Button
+            OutlinedButton(
+                onClick = onViewHistory,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Teal600
+                )
+            ) {
+                Text(
+                    text = "View History",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )

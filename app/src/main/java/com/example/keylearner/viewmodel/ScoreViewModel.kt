@@ -72,6 +72,19 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * Set view mode to All Time (used when accessing history from Start Screen)
+     */
+    fun setViewModeToAllTime() {
+        _viewMode.value = ViewMode.ALL_TIME
+        // Load cumulative stats and all-time keys
+        loadCumulativeStats()
+        viewModelScope.launch {
+            val keys = scoreRepository.getAllKeysPlayed().toList().sorted()
+            keys.firstOrNull()?.let { selectKey(it) }
+        }
+    }
+
+    /**
      * Select a key to display in the chart
      */
     fun selectKey(keyName: String) {
