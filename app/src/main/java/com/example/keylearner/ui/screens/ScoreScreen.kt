@@ -20,16 +20,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.keylearner.data.model.GameScores
+import com.example.keylearner.data.model.PositionProgressPoint
 import com.example.keylearner.data.model.ViewMode
 import com.example.keylearner.ui.theme.*
+import com.example.keylearner.viewmodel.ChartBarData
 import com.example.keylearner.viewmodel.ScoreViewModel
 import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
+import kotlin.math.abs
 
 /**
  * Score Screen - Results and statistics
@@ -49,6 +54,8 @@ fun ScoreScreen(
     val selectedKey by viewModel.selectedKey.collectAsState()
     val chartData by viewModel.chartData.collectAsState()
     val cumulativeStats by viewModel.cumulativeStats.collectAsState()
+    val selectedPositions by viewModel.selectedPositions.collectAsState()
+    val progressData by viewModel.progressData.collectAsState()
 
     var availableKeys by remember { mutableStateOf(currentGameScores?.getPlayedKeys() ?: emptyList()) }
 
@@ -244,7 +251,66 @@ fun ScoreScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Position Selector (All Time view only)
+            if (viewMode == ViewMode.ALL_TIME && selectedKey != null) {
+                PositionSelectorCard(
+                    selectedKey = selectedKey!!,
+                    selectedPositions = selectedPositions,
+                    onPositionToggled = { position ->
+                        viewModel.togglePosition(position)
+                    },
+                    chartData = chartData
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Progress visualization (shown when positions are selected in All Time view)
+            if (viewMode == ViewMode.ALL_TIME && selectedPositions.isNotEmpty() && progressData.isNotEmpty()) {
+                // Define position colors
+                val positionColors = listOf(
+                    CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
+                    Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
+                    Color(0xFF34495E)
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp),  // Taller for legend
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Progress Comparison",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        LineChartComposable(
+                            dataMap = progressData,
+                            positionColors = positionColors,
+                            chartData = chartData,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Compact summary card
+                ProgressSummaryCard(
+                    selectedPositions = selectedPositions,
+                    progressData = progressData,
+                    positionColors = positionColors,
+                    chartData = chartData
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Action Buttons
             // Only show Replay button if there's a current game
@@ -450,4 +516,269 @@ fun BarChartComposable(
         },
         modifier = modifier
     )
+}
+
+/**
+ * Position selector card with chord chips (multi-select enabled)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PositionSelectorCard(
+    selectedKey: String,
+    selectedPositions: Set<Int>,
+    onPositionToggled: (Int) -> Unit,
+    chartData: List<ChartBarData>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Select Position to View Progress",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            // Row 1: Positions 1-4
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (position in 1..4) {
+                    val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+                    FilterChip(
+                        selected = position in selectedPositions,
+                        onClick = { onPositionToggled(position) },
+                        label = { Text(chordLabel) },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Teal600,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Row 2: Positions 5-7
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (position in 5..7) {
+                    val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+                    FilterChip(
+                        selected = position in selectedPositions,
+                        onClick = { onPositionToggled(position) },
+                        label = { Text(chordLabel) },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Teal600,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+                // Add spacer to balance the row
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/**
+ * Line chart for progress visualization (multi-line support)
+ */
+@Composable
+fun LineChartComposable(
+    dataMap: Map<Int, List<PositionProgressPoint>>,
+    positionColors: List<Color>,
+    chartData: List<ChartBarData>,
+    modifier: Modifier = Modifier
+) {
+    AndroidView(
+        factory = { context ->
+            com.github.mikephil.charting.charts.LineChart(context).apply {
+                description.isEnabled = false
+                setDrawGridBackground(false)
+                setTouchEnabled(true)
+                setPinchZoom(false)
+
+                // X-axis configuration
+                xAxis.apply {
+                    position = XAxis.XAxisPosition.BOTTOM
+                    setDrawGridLines(false)
+                    granularity = 1f
+                    valueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            return "S${value.toInt()}"  // S1, S2, S3, etc.
+                        }
+                    }
+                }
+
+                // Y-axis configuration
+                axisLeft.apply {
+                    setDrawGridLines(true)
+                    axisMinimum = 0f
+                    axisMaximum = 100f
+                    granularity = 10f
+                    valueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            return "${value.toInt()}%"
+                        }
+                    }
+                }
+                axisRight.isEnabled = false
+            }
+        },
+        update = { chart ->
+            if (dataMap.isEmpty()) return@AndroidView
+
+            val dataSets = mutableListOf<com.github.mikephil.charting.data.LineDataSet>()
+
+            dataMap.entries.sortedBy { it.key }.forEachIndexed { index, (position, points) ->
+                if (points.isEmpty()) return@forEachIndexed
+
+                val entries = points.map { point ->
+                    com.github.mikephil.charting.data.Entry(
+                        point.sessionIndex.toFloat(),
+                        point.accuracy
+                    )
+                }
+
+                val color = positionColors[position - 1]
+                val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+
+                val lineDataSet = com.github.mikephil.charting.data.LineDataSet(entries, chordLabel).apply {
+                    this.color = color.toArgb()
+                    lineWidth = 3f
+                    setCircleColor(color.toArgb())
+                    circleRadius = 4f
+                    setDrawCircleHole(false)
+                    setDrawValues(false)  // Disable values on points (too cluttered with multiple lines)
+
+                    // Apply different line styles for distinction
+                    when (index % 3) {
+                        0 -> {
+                            // Solid line (default)
+                        }
+                        1 -> {
+                            // Dashed line
+                            enableDashedLine(10f, 5f, 0f)
+                        }
+                        2 -> {
+                            // Dotted line
+                            enableDashedLine(2f, 5f, 0f)
+                        }
+                    }
+
+                    mode = com.github.mikephil.charting.data.LineDataSet.Mode.LINEAR
+                }
+
+                dataSets.add(lineDataSet)
+            }
+
+            val lineData = com.github.mikephil.charting.data.LineData(dataSets as List<com.github.mikephil.charting.interfaces.datasets.ILineDataSet>)
+            chart.data = lineData
+
+            // Configure legend to appear below chart
+            chart.legend.isEnabled = true
+            chart.legend.verticalAlignment = com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.BOTTOM
+            chart.legend.horizontalAlignment = com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER
+            chart.legend.orientation = com.github.mikephil.charting.components.Legend.LegendOrientation.HORIZONTAL
+            chart.legend.setDrawInside(false)
+            chart.legend.textSize = 10f
+
+            chart.invalidate()
+        },
+        modifier = modifier
+    )
+}
+
+/**
+ * Compact summary card showing progress metrics for each selected position
+ */
+@Composable
+private fun ProgressSummaryCard(
+    selectedPositions: Set<Int>,
+    progressData: Map<Int, List<PositionProgressPoint>>,
+    positionColors: List<Color>,
+    chartData: List<ChartBarData>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Progress Summary",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            selectedPositions.sorted().forEach { position ->
+                val data = progressData[position] ?: emptyList()
+                if (data.isNotEmpty()) {
+                    val color = positionColors[position - 1]
+                    val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+                    val firstAccuracy = data.first().accuracy
+                    val latestAccuracy = data.last().accuracy
+                    val improvement = latestAccuracy - firstAccuracy
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Color indicator
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .background(color, shape = MaterialTheme.shapes.small)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = chordLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Row {
+                            Text(
+                                text = "${String.format("%.0f", latestAccuracy)}%",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            val arrow = when {
+                                improvement > 5f -> "↑"
+                                improvement < -5f -> "↓"
+                                else -> "→"
+                            }
+                            val improvementColor = when {
+                                improvement > 5f -> Green600
+                                improvement < -5f -> WrongOrange
+                                else -> Color.Gray
+                            }
+                            Text(
+                                text = "$arrow${String.format("%.0f", kotlin.math.abs(improvement))}%",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = improvementColor
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

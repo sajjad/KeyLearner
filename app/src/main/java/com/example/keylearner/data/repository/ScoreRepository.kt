@@ -130,6 +130,44 @@ class ScoreRepository(private val context: Context) {
     }
 
     /**
+     * Get progress data for a specific key and position across all sessions
+     *
+     * @param keyName The key to track (e.g., "C", "Em")
+     * @param position The position in the scale (1-7)
+     * @return List of progress points showing accuracy trend over time
+     */
+    suspend fun getProgressDataForPosition(keyName: String, position: Int): List<PositionProgressPoint> {
+        val sessionsJson = context.scoreDataStore.data.map { it[GAME_SESSIONS] ?: "[]" }
+        val allSessions = parseGameSessions(sessionsJson.first())
+
+        // Filter sessions that contain this key, sorted by timestamp
+        val sessionsWithKey = allSessions
+            .filter { session -> session.scores.getScoreForKey(keyName) != null }
+            .sortedBy { it.timestamp }
+
+        // Map to progress points
+        return sessionsWithKey.mapIndexed { index, session ->
+            val keyScore = session.scores.getScoreForKey(keyName)!!
+            val positionScore = keyScore.getScoreForPosition(position)
+
+            val total = positionScore.correct + positionScore.wrong
+            val accuracy = if (total > 0) {
+                (positionScore.correct.toFloat() / total * 100)
+            } else {
+                0f
+            }
+
+            PositionProgressPoint(
+                timestamp = session.timestamp,
+                correct = positionScore.correct,
+                wrong = positionScore.wrong,
+                accuracy = accuracy,
+                sessionIndex = index + 1
+            )
+        }
+    }
+
+    /**
      * Clear all historical scores
      */
     suspend fun clearHistory() {

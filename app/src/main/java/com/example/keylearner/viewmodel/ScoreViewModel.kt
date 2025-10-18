@@ -37,6 +37,12 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _chartData = MutableStateFlow<List<ChartBarData>>(emptyList())
     val chartData: StateFlow<List<ChartBarData>> = _chartData.asStateFlow()
 
+    private val _selectedPositions = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedPositions: StateFlow<Set<Int>> = _selectedPositions.asStateFlow()
+
+    private val _progressData = MutableStateFlow<Map<Int, List<PositionProgressPoint>>>(emptyMap())
+    val progressData: StateFlow<Map<Int, List<PositionProgressPoint>>> = _progressData.asStateFlow()
+
     /**
      * Initialize with current game scores
      */
@@ -49,10 +55,11 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             loadCumulativeStats()
         }
 
-        // Auto-select first key
+        // Auto-select first key and position 1
         val firstKey = scores.getPlayedKeys().firstOrNull()
         if (firstKey != null) {
             selectKey(firstKey)
+            togglePosition(1)  // Auto-select position 1
         }
     }
 
@@ -80,7 +87,10 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         loadCumulativeStats()
         viewModelScope.launch {
             val keys = scoreRepository.getAllKeysPlayed().toList().sorted()
-            keys.firstOrNull()?.let { selectKey(it) }
+            keys.firstOrNull()?.let { key ->
+                selectKey(key)
+                togglePosition(1)  // Auto-select position 1
+            }
         }
     }
 
@@ -214,6 +224,92 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             correctAnswers = totalCorrect,
             wrongAnswers = totalWrong,
             accuracy = accuracy
+        )
+    }
+
+    /**
+     * Toggle a position for viewing progress data
+     */
+    fun togglePosition(position: Int) {
+        val current = _selectedPositions.value
+        _selectedPositions.value = if (position in current) {
+            current - position  // Remove if already selected
+        } else {
+            current + position  // Add if not selected
+        }
+        loadProgressData()
+    }
+
+    /**
+     * Clear position selection
+     */
+    fun clearPositionSelection() {
+        _selectedPositions.value = emptySet()
+        _progressData.value = emptyMap()
+    }
+
+    /**
+     * Load progress data for selected key and all selected positions
+     */
+    private fun loadProgressData() {
+        val key = _selectedKey.value ?: return
+        val positions = _selectedPositions.value
+
+        if (positions.isEmpty()) {
+            _progressData.value = emptyMap()
+            return
+        }
+
+        viewModelScope.launch {
+            val dataMap = mutableMapOf<Int, List<PositionProgressPoint>>()
+            positions.forEach { position ->
+                val data = scoreRepository.getProgressDataForPosition(key, position)
+                dataMap[position] = data
+            }
+            _progressData.value = dataMap
+        }
+    }
+
+    /**
+     * Calculate progress statistics from progress data
+     */
+    private fun calculateProgressStats(data: List<PositionProgressPoint>): ProgressStats? {
+        if (data.isEmpty()) return null
+
+        val firstAccuracy = data.first().accuracy
+        val latestAccuracy = data.last().accuracy
+        val improvement = latestAccuracy - firstAccuracy
+
+        val bestPoint = data.maxByOrNull { it.accuracy }
+        val bestAccuracy = bestPoint?.accuracy ?: 0f
+        val bestSessionIndex = bestPoint?.sessionIndex ?: 1
+
+        // Calculate trend
+        val trend = when {
+            improvement > 10f -> "improving"
+            improvement < -10f -> "declining"
+            else -> "stable"
+        }
+
+        // Generate encouragement message
+        val encouragementMessage = when {
+            latestAccuracy >= 90f -> "Outstanding! You've mastered this chord!"
+            improvement > 20f -> "Excellent progress! Keep up the great work!"
+            improvement > 10f -> "Great improvement! You're getting better!"
+            improvement > 0f -> "Nice work! Keep practising!"
+            improvement == 0f -> "Consistent performance! Try to improve further."
+            improvement > -10f -> "Keep practising - you'll improve!"
+            else -> "Don't give up! Practice makes perfect."
+        }
+
+        return ProgressStats(
+            firstAccuracy = firstAccuracy,
+            latestAccuracy = latestAccuracy,
+            improvementPercentage = improvement,
+            bestAccuracy = bestAccuracy,
+            bestSessionIndex = bestSessionIndex,
+            trend = trend,
+            encouragementMessage = encouragementMessage
         )
     }
 }

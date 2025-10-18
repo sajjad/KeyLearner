@@ -6,23 +6,19 @@ import com.example.keylearner.data.model.Chord
  * Music theory utilities for chord generation
  *
  * This object handles the generation of chords for any major or minor key,
- * with proper enharmonic handling to ensure each note name appears only once in a scale.
+ * with proper enharmonic handling to ensure each letter name (A-G) appears exactly once in a scale.
  */
 object MusicTheory {
 
-    // Chromatic scale using sharps
-    private val notes = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+    // Letter names in order
+    private val letters = listOf("A", "B", "C", "D", "E", "F", "G")
 
-    // Enharmonic equivalents (sharps to flats)
-    private val noteEnharmonics = mapOf(
-        "C#" to "Db",
-        "D#" to "Eb",
-        "F#" to "Gb",
-        "G#" to "Ab",
-        "A#" to "Bb"
+    // Semitones from C for each natural note
+    private val naturalNoteSemitones = mapOf(
+        "C" to 0, "D" to 2, "E" to 4, "F" to 5, "G" to 7, "A" to 9, "B" to 11
     )
 
-    // Major scale intervals (whole and half steps from root)
+    // Major scale intervals (semitones from root)
     // W-W-H-W-W-W-H pattern: 0, 2, 4, 5, 7, 9, 11
     private val majorIntervals = listOf(0, 2, 4, 5, 7, 9, 11)
 
@@ -30,7 +26,7 @@ object MusicTheory {
     // I, ii, iii, IV, V, vi, vii°
     private val majorQualities = listOf("M", "m", "m", "M", "M", "m", "dim")
 
-    // Natural minor scale intervals (whole and half steps from root)
+    // Natural minor scale intervals (semitones from root)
     // W-H-W-W-H-W-W pattern: 0, 2, 3, 5, 7, 8, 10
     private val minorIntervals = listOf(0, 2, 3, 5, 7, 8, 10)
 
@@ -41,72 +37,91 @@ object MusicTheory {
     /**
      * Generate a chord for a given key and position
      *
-     * @param key The root note of the key (e.g., "C", "Em", "F#")
+     * @param key The root note of the key (e.g., "C", "E", "F#")
      * @param isMinor Whether the key is minor (true) or major (false)
      * @param position The position in the scale (1-7)
      * @return The chord at the specified position
      *
      * Example: getChord("C", false, 1) returns Chord("C", "M")
-     * Example: getChord("Em", true, 2) returns Chord("F#", "dim")
+     * Example: getChord("E", true, 2) returns Chord("F#", "dim")
      */
     fun getChord(key: String, isMinor: Boolean, position: Int): Chord {
         require(position in 1..7) { "Position must be between 1 and 7" }
 
-        val keyIndex = notes.indexOf(key)
-        require(keyIndex != -1) { "Invalid key: $key" }
+        // Build the scale with proper letter-name spelling
+        val scale = buildScale(key, if (isMinor) minorIntervals else majorIntervals)
+        val qualities = if (isMinor) minorQualities else majorQualities
 
-        return if (isMinor) {
-            getMinorChord(key, keyIndex, position)
-        } else {
-            getMajorChord(key, keyIndex, position)
-        }
+        return Chord(scale[position - 1], qualities[position - 1])
     }
 
     /**
-     * Generate a chord in a major key
+     * Build a scale with proper enharmonic spelling
+     * Ensures each letter (A-G) appears exactly once
+     *
+     * @param rootNote The root note (e.g., "C", "F#", "Bb")
+     * @param intervals List of semitone intervals from root
+     * @return List of note names with correct enharmonic spelling
      */
-    private fun getMajorChord(key: String, keyIndex: Int, position: Int): Chord {
-        val intervals = majorIntervals
-        val qualities = majorQualities
+    private fun buildScale(rootNote: String, intervals: List<Int>): List<String> {
+        // Parse the root note to get letter and accidental
+        val rootLetter = rootNote[0].toString()
+        val rootAccidental = if (rootNote.length > 1) rootNote.substring(1) else ""
 
-        val noteIndex = (keyIndex + intervals[position - 1]) % 12
-        var noteName = notes[noteIndex]
+        // Get the semitone value of the root
+        val rootSemitones = getNoteInSemitones(rootNote)
 
-        // Enharmonic handling for major keys
-        // Sharp keys (G, D, A, E, B) keep sharps
-        // Flat keys (F, C) convert sharps to flats
-        if (noteName.contains("#")) {
-            when (key) {
-                in listOf("G", "D", "A", "E", "B") -> {
-                    // Keep sharp notation
-                }
-                in listOf("F", "C") -> {
-                    // Convert to flat notation
-                    noteName = noteEnharmonics[noteName] ?: noteName
+        // Find starting position in letter sequence
+        val startLetterIndex = letters.indexOf(rootLetter)
+
+        // Build scale notes
+        return intervals.mapIndexed { index, interval ->
+            // Calculate which letter this scale degree should use
+            val letterIndex = (startLetterIndex + index) % 7
+            val letter = letters[letterIndex]
+
+            // Calculate target semitone value
+            val targetSemitone = (rootSemitones + interval) % 12
+
+            // Calculate natural semitone value for this letter
+            val naturalSemitone = naturalNoteSemitones[letter]!!
+
+            // Calculate how many semitones we need to adjust
+            val adjustment = (targetSemitone - naturalSemitone + 12) % 12
+
+            // Apply the appropriate accidental
+            when (adjustment) {
+                0 -> letter                    // Natural
+                1 -> "${letter}#"             // Sharp
+                2 -> "${letter}##"            // Double sharp (rare)
+                11 -> "${letter}b"            // Flat
+                10 -> "${letter}bb"           // Double flat (rare)
+                else -> {
+                    // This shouldn't happen in normal keys
+                    letter
                 }
             }
         }
-
-        return Chord(noteName, qualities[position - 1])
     }
 
     /**
-     * Generate a chord in a minor key
+     * Convert a note name to its semitone value (0-11)
      */
-    private fun getMinorChord(key: String, keyIndex: Int, position: Int): Chord {
-        val intervals = minorIntervals
-        val qualities = minorQualities
+    private fun getNoteInSemitones(note: String): Int {
+        val letter = note[0].toString()
+        val accidental = if (note.length > 1) note.substring(1) else ""
 
-        val noteIndex = (keyIndex + intervals[position - 1]) % 12
-        var noteName = notes[noteIndex]
+        var semitones = naturalNoteSemitones[letter]!!
 
-        // Enharmonic handling for minor keys
-        // Minor keys (D, E, G, A, B) prefer flats
-        if (noteName.contains("#") && key in listOf("D", "E", "G", "A", "B")) {
-            noteName = noteEnharmonics[noteName] ?: noteName
+        // Apply accidentals
+        when (accidental) {
+            "#" -> semitones += 1
+            "##" -> semitones += 2
+            "b" -> semitones -= 1
+            "bb" -> semitones -= 2
         }
 
-        return Chord(noteName, qualities[position - 1])
+        return (semitones + 12) % 12
     }
 
     /**
@@ -134,9 +149,8 @@ object MusicTheory {
         // Check if notes are the same
         if (chord1.note == chord2.note) return true
 
-        // Check if one is the enharmonic equivalent of the other
-        return noteEnharmonics[chord1.note] == chord2.note ||
-               noteEnharmonics[chord2.note] == chord1.note
+        // Check if they have the same semitone value
+        return getNoteInSemitones(chord1.note) == getNoteInSemitones(chord2.note)
     }
 
     /**

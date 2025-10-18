@@ -170,6 +170,42 @@ com.example.keylearner/
 - [x] Create `BarChartComposable` wrapper for MPAndroidChart
 - [x] Save current game scores to repository when entering Score screen
 - [x] Integrate ScoreScreen into AppNavigation with shared scores
+- [x] Add "View History" button on Start Screen to access historical statistics
+
+---
+
+## Phase 7.5: Progress Tracking (Multi-Select Dual-Chart View)
+**Status:** ✅ Complete
+
+### Tasks:
+- [x] **Data Models**:
+  - Create `PositionProgressPoint` data class (timestamp, correct, wrong, accuracy, sessionIndex)
+  - Create `ProgressStats` data class (first/latest accuracy, improvement, trend, encouragement message)
+- [x] **ScoreRepository**:
+  - Add `getProgressDataForPosition(keyName, position)` method
+  - Returns chronological accuracy data for specific key/position across all sessions
+  - Calculate session-by-session accuracy percentages
+- [x] **ScoreViewModel**:
+  - Multi-select position state using `Set<Int>` (supports selecting 1-7 positions)
+  - Progress data stored as `Map<Int, List<PositionProgressPoint>>` for multiple positions
+  - Implement `togglePosition()` for multi-select behavior
+  - Load progress data for all selected positions concurrently
+  - Auto-select position 1 on first view
+- [x] **ScoreScreen UI** (All Time view only):
+  - Position selector: 7 FilterChip buttons with chord labels (multi-select enabled)
+  - Multi-line chart card showing accuracy trends for all selected positions
+  - Progress summary card with compact metrics table
+- [x] **Multi-Line Chart Components**:
+  - Update `LineChartComposable` to support multiple lines with distinct colors
+  - 7 position colors: Green, Blue, Purple, Orange, Red, Teal, Indigo
+  - Line style variations: solid, dashed, dotted (cycles through for distinction)
+  - Legend positioned below chart with chord labels
+  - Disable individual value labels (prevents clutter)
+- [x] **Progress Summary Card**:
+  - Color indicator for each selected position
+  - Latest accuracy and improvement metrics
+  - Color-coded improvement arrows (↑/↓/→)
+- [x] Handle edge cases (no positions selected, all 7 selected, different session counts)
 
 ---
 
