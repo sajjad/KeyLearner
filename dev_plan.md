@@ -224,21 +224,39 @@ com.example.keylearner/
 ---
 
 ## Phase 9: Testing & Validation
-**Status:** ⏳ Pending
+**Status:** ✅ Complete (Unit Tests) / ⏳ Pending (UI Tests)
 
 ### Tasks:
-- [ ] **Music Theory Tests**:
+- [x] **Music Theory Tests** (`MusicTheoryTest.kt` - 50+ tests):
   - Test chord generation for all 7 major keys
   - Test chord generation for all 7 minor keys
   - Verify enharmonic handling (e.g., F# vs Gb)
   - Test edge cases (B major, F# minor, etc.)
-- [ ] **Game Logic Tests**:
-  - Test timer at various delays
+  - Test scale consistency (each letter A-G appears once)
+  - Test quality patterns (major: M-m-m-M-M-m-dim, minor: m-dim-M-m-m-M-M)
+  - Test display names and key validation
+- [x] **Game Logic Tests** (`GameLogicTest.kt` - 25+ tests):
   - Verify answer checking (correct/wrong)
-  - Test enharmonic answer acceptance
+  - Test enharmonic answer acceptance (C# vs Db, F# vs Gb, etc.)
+  - Test all position validation
+  - Test quality patterns across all keys
+  - Real game scenario simulations
+- [x] **Model Tests** (`ModelTest.kt` - 40+ tests):
+  - PositionScore (accuracy calculations, totals)
+  - KeyScore (aggregation, overall accuracy)
+  - GameScores (multi-key scoring, overall accuracy)
+  - Settings (key selection, validation)
+  - GameState (key display, navigation)
+  - SelectedAnswer (composition, validation)
+  - Chord display names
+- [ ] **ViewModel Tests** (requires instrumented testing):
+  - Test timer at various delays
   - Verify score tracking accuracy
   - Test key transitions
-- [ ] **UI Tests**:
+- [ ] **Repository Tests** (requires instrumented testing):
+  - Settings persistence via DataStore
+  - Score persistence and retrieval
+- [ ] **UI Tests** (requires instrumented testing):
   - Test navigation flow
   - Verify settings persistence
   - Test both answer modes
