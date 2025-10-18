@@ -69,7 +69,7 @@ fun GameScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Indigo100, Purple100)
+                    colors = listOf(SkyBlueLight, BlueLight)
                 )
             )
     ) {
@@ -121,7 +121,7 @@ fun GameScreen(
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = Purple600
+                                color = SkyBlue600
                             )
                             Text(
                                 text = "Question ${state.questionsAsked + 1} of ${settings.count}",
@@ -250,7 +250,7 @@ fun GameScreen(
                                 fontSize = 36.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = Purple600
+                            color = SkyBlue600
                         )
                         Text(
                             text = "Question ${state.questionsAsked + 1} of ${settings.count}",
@@ -370,7 +370,7 @@ private fun LimitedChoicesMode(
                             .weight(1f)
                             .height(if (isLandscape) 56.dp else 64.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Purple600
+                            containerColor = SkyBlue600
                         )
                     ) {
                         Text(
@@ -443,7 +443,7 @@ private fun FullChoicesMode(
                     label = note,
                     isSelected = selectedAnswer.note == note,
                     onClick = { onNoteSelected(note) },
-                    selectedColor = Purple600,
+                    selectedColor = SkyBlue600,
                     modifier = Modifier.weight(1f),
                     height = buttonHeight
                 )

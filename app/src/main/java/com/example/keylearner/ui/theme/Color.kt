@@ -20,11 +20,13 @@ val WrongOrange = Color(0xFFF39C12)   // Wrong answers
 
 // Gradient colours
 val PurpleLight = Color(0xFFF3E5F5)   // Light purple for backgrounds
+val SkyBlueLight = Color(0xFF83BAD2)  // Very light sky blue for backgrounds
 val BlueLight = Color(0xFFE3F2FD)     // Light blue for backgrounds
 val GreenLight = Color(0xFFE8F5E9)    // Light green for score screen
 val TealLight = Color(0xFFE0F2F1)     // Light teal for score screen
 
 val Purple600 = Color(0xFF9C27B0)     // Purple for buttons
+val SkyBlue600 = Color(0xFF039BE5)    // Sky blue for buttons (replaces purple in many places)
 val Blue600 = Color(0xFF2196F3)       // Blue for buttons
 val Green600 = Color(0xFF27AE60)      // Green for success
 val Teal600 = Color(0xFF009688)       // Teal for accents

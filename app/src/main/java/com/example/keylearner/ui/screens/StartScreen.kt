@@ -18,11 +18,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.keylearner.data.model.Settings
 import com.example.keylearner.ui.theme.BlueLight
-import com.example.keylearner.ui.theme.Purple600
+import com.example.keylearner.ui.theme.SkyBlueLight
+import com.example.keylearner.ui.theme.SkyBlue600
 import com.example.keylearner.ui.theme.Blue600
 import com.example.keylearner.ui.theme.Green600
 import com.example.keylearner.ui.theme.Teal600
-import com.example.keylearner.ui.theme.PurpleLight
 import com.example.keylearner.viewmodel.StartScreenViewModel
 
 /**
@@ -47,7 +47,7 @@ fun StartScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(PurpleLight, BlueLight)
+                    colors = listOf(SkyBlueLight, BlueLight)
                 )
             )
     ) {
@@ -64,7 +64,7 @@ fun StartScreen(
                     fontWeight = FontWeight.Bold,
                     fontSize = 32.sp
                 ),
-                color = Purple600,
+                color = SkyBlue600,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
@@ -126,8 +126,8 @@ fun StartScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Purple600,
-                    disabledContainerColor = Purple600.copy(alpha = 0.5f)
+                    containerColor = SkyBlue600,
+                    disabledContainerColor = SkyBlue600.copy(alpha = 0.5f)
                 ),
                 enabled = canStart
             ) {
@@ -193,7 +193,7 @@ private fun KeysSection(
                     key = key,
                     isSelected = majorKeys.contains(key),
                     onClick = { onMajorKeyToggle(key) },
-                    selectedColor = Purple600,
+                    selectedColor = SkyBlue600,
                     modifier = Modifier.weight(1f)
                 )
             }
