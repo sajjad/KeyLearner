@@ -132,52 +132,55 @@ com.example.keylearner/
 ---
 
 ## Phase 7: Score Screen Implementation
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ### Tasks:
-- [ ] **ScoreRepository**: DataStore/Room implementation for historical scores
+- [x] **ScoreRepository**: DataStore implementation for historical scores
   - Save game scores after each session
   - Load historical scores by key
   - Aggregate scores across all games for cumulative view
   - Store timestamp with each game session
-- [ ] **ScoreViewModel**:
+  - JSON serialization for persistence
+  - Keep last 100 game sessions
+- [x] **ScoreViewModel**:
   - Process current game scores into chart data format
   - Load and aggregate historical scores for all-time view
   - Toggle between "Current Game" and "All Time" modes
   - Generate chord labels (e.g., "1-C", "2-Dm")
   - Handle key selection for chart display
-  - Provide cumulative statistics (total games played, overall accuracy, etc.)
-- [ ] **ScoreScreen Composable**:
+  - Provide cumulative statistics (total games played, overall accuracy, most practised keys)
+- [x] **ScoreScreen Composable**:
   - **View Mode Toggle**: Calendar icon button to switch between:
     - **Current Game** (default): Shows scores from just-completed game
     - **All Time**: Shows cumulative scores across all previous games
   - Key dropdown/selector showing all played keys (filtered by view mode)
   - MPAndroidChart integration:
-    - Stacked bar chart component
+    - Grouped bar chart component (correct + wrong side-by-side)
     - X-axis: Chord positions with labels
     - Y-axis: Count
     - Green bars for correct (#27ae60)
     - Orange bars for wrong (#f39c12)
-    - Labels showing "correct/wrong" counts on bars
+    - Value labels on bars
   - Statistics panel:
-    - Current game: Accuracy percentage, total questions
-    - All time: Total games played, overall accuracy, most practised keys
+    - Current game: Accuracy percentage, total questions, correct/wrong counts
+    - All time: Total games played, overall accuracy, correct/wrong counts, most practised keys
   - "Replay with Same Settings" button
   - "Back to Start Screen" button
-- [ ] Create `BarChartComposable` wrapper for MPAndroidChart
-- [ ] Save current game scores to repository when entering Score screen
+- [x] Create `BarChartComposable` wrapper for MPAndroidChart
+- [x] Save current game scores to repository when entering Score screen
+- [x] Integrate ScoreScreen into AppNavigation with shared scores
 
 ---
 
 ## Phase 8: Settings Persistence
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ### Tasks:
-- [ ] Implement DataStore preferences
-- [ ] Save settings when changed
-- [ ] Load settings on app start
-- [ ] Ensure settings persist after replay
-- [ ] Handle first-time launch (default settings)
+- [x] Implement DataStore preferences
+- [x] Save settings when changed
+- [x] Load settings on app start
+- [x] Ensure settings persist after replay
+- [x] Handle first-time launch (default settings)
 
 ---
 

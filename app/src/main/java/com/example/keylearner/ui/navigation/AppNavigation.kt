@@ -1,6 +1,7 @@
 package com.example.keylearner.ui.navigation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,8 +23,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.keylearner.data.model.GameScores
 import com.example.keylearner.ui.screens.GameScreen
+import com.example.keylearner.ui.screens.ScoreScreen
 import com.example.keylearner.ui.screens.StartScreen
+import com.example.keylearner.viewmodel.GameViewModel
 import com.example.keylearner.viewmodel.StartScreenViewModel
 
 /**
@@ -49,6 +56,9 @@ fun AppNavigation(
     )
     val settings by startScreenViewModel.settings.collectAsState()
 
+    // Shared GameViewModel to pass scores from Game to Score screen
+    var currentGameScores by remember { mutableStateOf<GameScores?>(null) }
+
     NavHost(
         navController = navController,
         startDestination = Screen.Start.route
@@ -64,12 +74,17 @@ fun AppNavigation(
 
         // Game Screen - Chord learning gameplay
         composable(Screen.Game.route) {
+            val gameViewModel: GameViewModel = viewModel()
+
             GameScreen(
                 settings = settings,
+                viewModel = gameViewModel,
                 onQuitToStart = {
                     navController.popBackStack(Screen.Start.route, inclusive = false)
                 },
                 onGameComplete = {
+                    // Save scores before navigating
+                    currentGameScores = gameViewModel.getGameScores()
                     navController.navigate(Screen.Score.route) {
                         // Don't allow going back to game from score screen
                         popUpTo(Screen.Start.route)
@@ -80,54 +95,29 @@ fun AppNavigation(
 
         // Score Screen - Results and statistics
         composable(Screen.Score.route) {
-            PlaceholderScoreScreen(
-                onReplay = {
-                    navController.navigate(Screen.Game.route) {
-                        popUpTo(Screen.Start.route)
+            val scores = currentGameScores
+            if (scores != null) {
+                ScoreScreen(
+                    currentGameScores = scores,
+                    onReplay = {
+                        navController.navigate(Screen.Game.route) {
+                            popUpTo(Screen.Start.route)
+                        }
+                    },
+                    onBackToStart = {
+                        navController.popBackStack(Screen.Start.route, inclusive = false)
                     }
-                },
-                onBackToStart = {
-                    navController.popBackStack(Screen.Start.route, inclusive = false)
+                )
+            } else {
+                // Fallback if no scores available
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No scores available")
                 }
-            )
+            }
         }
     }
 }
 
-// Placeholder screens - will be replaced with actual implementations in later phases
-
-@Composable
-private fun PlaceholderScoreScreen(
-    onReplay: () -> Unit,
-    onBackToStart: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Score Screen",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Text(
-            text = "Results and statistics will go here",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-        Button(
-            onClick = onReplay,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Replay with Same Settings")
-        }
-        Button(
-            onClick = onBackToStart,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Back to Start Screen")
-        }
-    }
-}
