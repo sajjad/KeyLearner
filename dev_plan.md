@@ -364,12 +364,12 @@ com.example.keylearner/
     - "No score data found in file"
     - "Import failed - please check file"
     - "Export successful - file saved"
-- [ ] **Testing**:
-  - Unit tests for CSV serialisation/deserialisation
+- [x] **Testing**:
+  - Unit tests for CSV serialisation/deserialisation (`CSVImportExportTest.kt` - 20+ tests)
   - Test import validation (malformed CSV, missing columns, invalid data)
   - Test merge logic (duplicate prevention)
   - Test edge cases (empty history, single session, 100+ sessions)
-  - Manual testing: Export → delete app data → import → verify scores restored
+  - Manual testing: Export → delete app data → import → verify scores restored ✅
 
 ### Benefits:
 - Users can backup score history before uninstalling app
