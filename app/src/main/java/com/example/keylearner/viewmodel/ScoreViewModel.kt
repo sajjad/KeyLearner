@@ -1,12 +1,14 @@
 package com.example.keylearner.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.keylearner.data.MusicTheory
 import com.example.keylearner.data.model.*
 import com.example.keylearner.data.repository.CumulativeStats
 import com.example.keylearner.data.repository.ScoreRepository
+import com.example.keylearner.util.FileExportHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +44,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _progressData = MutableStateFlow<Map<Int, List<PositionProgressPoint>>>(emptyMap())
     val progressData: StateFlow<Map<Int, List<PositionProgressPoint>>> = _progressData.asStateFlow()
+
+    private val _exportImportStatus = MutableStateFlow<ExportImportStatus>(ExportImportStatus.Idle)
+    val exportImportStatus: StateFlow<ExportImportStatus> = _exportImportStatus.asStateFlow()
 
     /**
      * Initialize with current game scores
@@ -310,6 +315,114 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             encouragementMessage = encouragementMessage
         )
     }
+
+    /**
+     * Generate CSV content for export
+     *
+     * @return CSV content or null if export fails
+     */
+    suspend fun generateCSVContent(): String? {
+        return try {
+            _exportImportStatus.value = ExportImportStatus.Exporting
+            val csv = scoreRepository.exportToCSV()
+            _exportImportStatus.value = ExportImportStatus.ExportSuccess
+            csv
+        } catch (e: Exception) {
+            _exportImportStatus.value = ExportImportStatus.Error(e.message ?: "Export failed")
+            null
+        }
+    }
+
+    /**
+     * Write CSV content to file URI
+     *
+     * @param uri The file URI to write to
+     * @param csvContent The CSV content to write
+     */
+    fun writeCSVToFile(uri: Uri, csvContent: String) {
+        viewModelScope.launch {
+            val result = FileExportHelper.writeCSVToUri(getApplication(), uri, csvContent)
+            _exportImportStatus.value = if (result.isSuccess) {
+                ExportImportStatus.ExportSuccess
+            } else {
+                ExportImportStatus.Error(result.exceptionOrNull()?.message ?: "Export failed")
+            }
+        }
+    }
+
+    /**
+     * Import CSV content from file URI
+     *
+     * @param uri The file URI to read from
+     */
+    fun importCSVFromFile(uri: Uri) {
+        viewModelScope.launch {
+            _exportImportStatus.value = ExportImportStatus.Importing
+
+            // Read file
+            val readResult = FileExportHelper.readCSVFromUri(getApplication(), uri)
+            if (readResult.isFailure) {
+                _exportImportStatus.value = ExportImportStatus.Error(
+                    readResult.exceptionOrNull()?.message ?: "Failed to read file"
+                )
+                return@launch
+            }
+
+            // Import CSV
+            val csvContent = readResult.getOrNull() ?: ""
+            val importResult = scoreRepository.importFromCSV(csvContent)
+
+            _exportImportStatus.value = if (importResult.isSuccess) {
+                // Refresh all data after successful import
+                refreshAllData()
+                ExportImportStatus.ImportSuccess
+            } else {
+                ExportImportStatus.Error(
+                    importResult.exceptionOrNull()?.message ?: "Import failed"
+                )
+            }
+        }
+    }
+
+    /**
+     * Refresh all data (used after import)
+     */
+    fun refreshAllData() {
+        viewModelScope.launch {
+            // Reload cumulative stats
+            loadCumulativeStats()
+
+            // Reload available keys and select first one if in All Time mode
+            if (_viewMode.value == ViewMode.ALL_TIME) {
+                val keys = scoreRepository.getAllKeysPlayed().toList().sorted()
+
+                // If current selected key is still valid, keep it and refresh its data
+                val keyToSelect = if (_selectedKey.value in keys) {
+                    _selectedKey.value
+                } else {
+                    // Otherwise select first available key
+                    keys.firstOrNull()
+                }
+
+                keyToSelect?.let { selectKey(it) }
+            } else {
+                // In current game mode, just refresh the current key
+                _selectedKey.value?.let { updateChartData(it) }
+            }
+
+            // Reload progress data if positions are selected
+            if (_selectedPositions.value.isNotEmpty()) {
+                loadProgressData()
+            }
+        }
+    }
+
+    /**
+     * Clear export/import status
+     */
+    fun clearExportImportStatus() {
+        _exportImportStatus.value = ExportImportStatus.Idle
+    }
 }
 
 /**
@@ -332,3 +445,15 @@ data class GameStats(
     val wrongAnswers: Int,
     val accuracy: Float
 )
+
+/**
+ * Status of export/import operations
+ */
+sealed class ExportImportStatus {
+    data object Idle : ExportImportStatus()
+    data object Exporting : ExportImportStatus()
+    data object Importing : ExportImportStatus()
+    data object ExportSuccess : ExportImportStatus()
+    data object ImportSuccess : ExportImportStatus()
+    data class Error(val message: String) : ExportImportStatus()
+}

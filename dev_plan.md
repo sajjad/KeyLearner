@@ -313,6 +313,72 @@ com.example.keylearner/
 
 ---
 
+## Phase 12: Score History CSV Import/Export
+**Status:** ✅ Complete
+
+### Tasks:
+- [x] **CSV Format Specification**:
+  - Define CSV structure: timestamp, keyName, position (1-7), correct, wrong
+  - Header row: `Timestamp,Key,Position,Correct,Wrong`
+  - Example: `2025-10-19T14:30:00Z,Em,1,5,2`
+  - One row per position per key per game session
+  - Use ISO 8601 format for timestamps
+- [x] **ScoreRepository Extensions**:
+  - Add `exportToCSV(): String` method to convert all historical scores to CSV format
+  - Add `importFromCSV(csvContent: String): Result<Unit>` method to parse and merge CSV data
+  - Validate CSV format (header check, column count, data types)
+  - Merge imported data with existing scores (avoid duplicates based on timestamp+key+position)
+  - Handle malformed CSV with proper error messages
+  - Maintain 100-session limit after import (keep most recent sessions)
+- [x] **File Operations (Storage Access Framework)**:
+  - Create `FileExportHelper` utility class for SAF integration
+  - Implement export: Launch CREATE_DOCUMENT intent with MIME type "text/csv"
+  - Implement import: Launch OPEN_DOCUMENT intent with MIME type "text/csv"
+  - Write CSV content to selected file URI
+  - Read CSV content from selected file URI
+  - Handle file I/O errors gracefully
+- [x] **ScoreViewModel Extensions**:
+  - Add `generateCSVContent()` function to trigger export flow
+  - Add `importCSVFromFile(uri: Uri)` function to trigger import flow
+  - Add UI state for export/import status (loading, success, error)
+  - Show success/error messages via SnackBar
+  - Refresh displayed data after successful import
+- [x] **ScoreScreen UI Updates**:
+  - Add two small icon buttons next to "Historical Statistics" heading
+  - Export button: Download icon (`Icons.Default.Download`)
+  - Import button: Upload icon (`Icons.Default.Upload`)
+  - Buttons right-aligned to screen edge using `Row` with `Spacer(Modifier.weight(1f))`
+  - Button size: 40dp with 24dp icons
+  - SnackBar for success/error messages
+- [x] **AppNavigation Updates**:
+  - Register ActivityResultLauncher for CREATE_DOCUMENT (export)
+  - Register ActivityResultLauncher for OPEN_DOCUMENT (import)
+  - Pass file URIs to ScoreViewModel for processing
+  - Generate timestamped filename for exports
+- [x] **Error Handling**:
+  - Handle file permission errors
+  - Validate CSV structure before import
+  - Check for corrupt/incomplete data
+  - Provide user-friendly error messages:
+    - "Invalid CSV format"
+    - "No score data found in file"
+    - "Import failed - please check file"
+    - "Export successful - file saved"
+- [ ] **Testing**:
+  - Unit tests for CSV serialisation/deserialisation
+  - Test import validation (malformed CSV, missing columns, invalid data)
+  - Test merge logic (duplicate prevention)
+  - Test edge cases (empty history, single session, 100+ sessions)
+  - Manual testing: Export → delete app data → import → verify scores restored
+
+### Benefits:
+- Users can backup score history before uninstalling app
+- Transfer progress between devices (phone → tablet)
+- Share progress with teachers/friends
+- Manual data analysis in spreadsheet apps
+
+---
+
 ## Status Legend:
 - ⏳ **Pending** - Not started
 - 🚧 **In Progress** - Currently working on

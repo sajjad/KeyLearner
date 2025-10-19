@@ -1,5 +1,9 @@
 package com.example.keylearner.ui.navigation
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -17,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +37,12 @@ import com.example.keylearner.ui.screens.GameScreen
 import com.example.keylearner.ui.screens.ScoreScreen
 import com.example.keylearner.ui.screens.StartScreen
 import com.example.keylearner.viewmodel.GameViewModel
+import com.example.keylearner.viewmodel.ScoreViewModel
 import com.example.keylearner.viewmodel.StartScreenViewModel
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Main navigation setup for the KeyLearner app
@@ -167,6 +177,32 @@ fun AppNavigation(
                 )
             }
         ) {
+            val scoreViewModel: ScoreViewModel = viewModel()
+            val coroutineScope = rememberCoroutineScope()
+
+            // Export CSV launcher (create new file)
+            val exportLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.CreateDocument("text/csv")
+            ) { uri ->
+                uri?.let {
+                    coroutineScope.launch {
+                        val csvContent = scoreViewModel.generateCSVContent()
+                        if (csvContent != null) {
+                            scoreViewModel.writeCSVToFile(it, csvContent)
+                        }
+                    }
+                }
+            }
+
+            // Import CSV launcher (open existing file)
+            val importLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocument()
+            ) { uri ->
+                uri?.let {
+                    scoreViewModel.importCSVFromFile(it)
+                }
+            }
+
             ScoreScreen(
                 currentGameScores = currentGameScores,
                 onReplay = {
@@ -176,7 +212,18 @@ fun AppNavigation(
                 },
                 onBackToStart = {
                     navController.popBackStack(Screen.Start.route, inclusive = false)
-                }
+                },
+                onExport = {
+                    // Generate filename with timestamp
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.UK)
+                    val timestamp = dateFormat.format(Date())
+                    val filename = "keylearner_scores_$timestamp.csv"
+                    exportLauncher.launch(filename)
+                },
+                onImport = {
+                    importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv"))
+                },
+                viewModel = scoreViewModel
             )
         }
     }

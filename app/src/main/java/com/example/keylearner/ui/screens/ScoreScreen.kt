@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import com.example.keylearner.R
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -49,6 +51,8 @@ fun ScoreScreen(
     currentGameScores: GameScores?,
     onReplay: () -> Unit,
     onBackToStart: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
     viewModel: ScoreViewModel = viewModel()
 ) {
     val viewMode by viewModel.viewMode.collectAsState()
@@ -57,8 +61,10 @@ fun ScoreScreen(
     val cumulativeStats by viewModel.cumulativeStats.collectAsState()
     val selectedPositions by viewModel.selectedPositions.collectAsState()
     val progressData by viewModel.progressData.collectAsState()
+    val exportImportStatus by viewModel.exportImportStatus.collectAsState()
 
     var availableKeys by remember { mutableStateOf(currentGameScores?.getPlayedKeys() ?: emptyList()) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Initialize with current game scores (if provided)
     LaunchedEffect(currentGameScores) {
@@ -87,34 +93,64 @@ fun ScoreScreen(
         }
     }
 
+    // Handle export/import status messages
+    LaunchedEffect(exportImportStatus) {
+        when (val status = exportImportStatus) {
+            is com.example.keylearner.viewmodel.ExportImportStatus.ExportSuccess -> {
+                snackbarHostState.showSnackbar("Export successful - file saved")
+                viewModel.clearExportImportStatus()
+            }
+            is com.example.keylearner.viewmodel.ExportImportStatus.ImportSuccess -> {
+                snackbarHostState.showSnackbar("Import successful - scores loaded")
+                viewModel.clearExportImportStatus()
+
+                // Reload available keys list in UI
+                if (viewMode == ViewMode.ALL_TIME) {
+                    viewModel.loadAllTimeKeys { keys ->
+                        availableKeys = keys
+                    }
+                }
+            }
+            is com.example.keylearner.viewmodel.ExportImportStatus.Error -> {
+                snackbarHostState.showSnackbar(status.message)
+                viewModel.clearExportImportStatus()
+            }
+            else -> {} // Idle, Exporting, Importing - no message
+        }
+    }
+
     val isDarkTheme = isSystemInDarkTheme()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = if (isDarkTheme) {
-                        listOf(DarkGrey800, DarkGrey900)
-                    } else {
-                        listOf(GreenLight, TealLight)
-                    }
-                )
-            )
-    ) {
-        Column(
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Transparent
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues)
+                .background(
+                    Brush.verticalGradient(
+                        colors = if (isDarkTheme) {
+                            listOf(DarkGrey800, DarkGrey900)
+                        } else {
+                            listOf(GreenLight, TealLight)
+                        }
+                    )
+                )
         ) {
-            // Header with title and view mode toggle
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+            // Header with title and buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -126,8 +162,42 @@ fun ScoreScreen(
                     color = Green600
                 )
 
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Export Button (Download)
+                IconButton(
+                    onClick = onExport,
+                    modifier = Modifier
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_export),
+                        contentDescription = "Export scores to CSV",
+                        tint = Teal600,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Import Button (Upload)
+                IconButton(
+                    onClick = onImport,
+                    modifier = Modifier
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_import),
+                        contentDescription = "Import scores from CSV",
+                        tint = Teal600,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
                 // View Mode Toggle Button (only shown if there's a current game)
                 if (currentGameScores != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     IconButton(
                         onClick = { viewModel.toggleViewMode() },
                         modifier = Modifier
@@ -275,7 +345,7 @@ fun ScoreScreen(
                 PositionSelectorCard(
                     selectedKey = selectedKey!!,
                     selectedPositions = selectedPositions,
-                    onPositionToggled = { position ->
+                    onPositionToggled = { position: Int ->
                         viewModel.togglePosition(position)
                     },
                     chartData = chartData,
@@ -366,11 +436,12 @@ fun ScoreScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+        }
     }
 }
 
 @Composable
-private fun CurrentGameStatistics(stats: com.example.keylearner.viewmodel.GameStats) {
+fun CurrentGameStatistics(stats: com.example.keylearner.viewmodel.GameStats) {
     Column {
         Text(
             text = "Current Game Statistics",
@@ -400,7 +471,7 @@ private fun CurrentGameStatistics(stats: com.example.keylearner.viewmodel.GameSt
 }
 
 @Composable
-private fun AllTimeStatistics(stats: com.example.keylearner.data.repository.CumulativeStats) {
+fun AllTimeStatistics(stats: com.example.keylearner.data.repository.CumulativeStats) {
     Column {
         Text(
             text = "All Time Statistics",
@@ -439,7 +510,7 @@ private fun AllTimeStatistics(stats: com.example.keylearner.data.repository.Cumu
 }
 
 @Composable
-private fun StatItem(label: String, value: String, color: Color = Color.DarkGray) {
+fun StatItem(label: String, value: String, color: Color = Color.DarkGray) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = label,
@@ -548,7 +619,7 @@ fun BarChartComposable(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PositionSelectorCard(
+fun PositionSelectorCard(
     selectedKey: String,
     selectedPositions: Set<Int>,
     onPositionToggled: (Int) -> Unit,
@@ -799,7 +870,7 @@ fun LineChartComposable(
  * Compact summary card showing progress metrics for each selected position
  */
 @Composable
-private fun ProgressSummaryCard(
+fun ProgressSummaryCard(
     selectedPositions: Set<Int>,
     progressData: Map<Int, List<PositionProgressPoint>>,
     positionColors: List<Color>,
