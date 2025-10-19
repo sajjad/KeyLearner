@@ -77,15 +77,31 @@ class GameViewModel : ViewModel() {
                 val newCountdown = current.countdown - 0.05f
 
                 if (newCountdown <= 0) {
-                    // Timer expired - change to new random position
-                    _gameState.value = current.copy(
-                        currentPosition = Random.nextInt(1, 8),
-                        countdown = settings.delay
-                    )
+                    // Timer expired - mark as incorrect and advance
+                    handleTimerExpiry(current, settings)
                 } else {
                     _gameState.value = current.copy(countdown = newCountdown)
                 }
             }
+        }
+    }
+
+    /**
+     * Handle timer expiry - mark as incorrect and advance to next question
+     */
+    private fun handleTimerExpiry(current: GameState, settings: Settings) {
+        // Mark as incorrect answer
+        updateScore(current.getCurrentKeyDisplay(), current.currentPosition, false)
+
+        // Move to next question
+        val newQuestionsAsked = current.questionsAsked + 1
+
+        if (newQuestionsAsked >= settings.count) {
+            // Move to next key or end game
+            advanceToNextKey(current)
+        } else {
+            // Next question in same key
+            advanceQuestion(current, newQuestionsAsked, settings)
         }
     }
 
@@ -149,6 +165,7 @@ class GameViewModel : ViewModel() {
         if (nextKeyIndex >= current.allKeys.size) {
             // Game complete
             timerJob?.cancel()
+            _gameState.value = current.copy(isGameComplete = true)
             return GameResult.GameComplete
         }
 

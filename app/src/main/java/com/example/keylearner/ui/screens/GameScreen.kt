@@ -58,6 +58,13 @@ fun GameScreen(
         viewModel.startGame(settings)
     }
 
+    // Observe game completion (e.g., from timer expiry)
+    LaunchedEffect(gameState?.isGameComplete) {
+        if (gameState?.isGameComplete == true) {
+            onGameComplete()
+        }
+    }
+
     // Safety check
     if (gameState == null) {
         Box(

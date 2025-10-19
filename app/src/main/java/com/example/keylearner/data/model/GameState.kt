@@ -11,6 +11,7 @@ package com.example.keylearner.data.model
  * @param questionsAsked Number of questions asked for the current key
  * @param countdown Current countdown timer value in seconds
  * @param shuffledChords Shuffled list of chords for limited choice mode
+ * @param isGameComplete Whether the game has been completed
  */
 data class GameState(
     val allKeys: List<Pair<String, Boolean>> = emptyList(),
@@ -20,7 +21,8 @@ data class GameState(
     val currentPosition: Int = 1,
     val questionsAsked: Int = 0,
     val countdown: Float = 0f,
-    val shuffledChords: List<Chord> = emptyList()
+    val shuffledChords: List<Chord> = emptyList(),
+    val isGameComplete: Boolean = false
 ) {
     /**
      * Get the display name for the current key
