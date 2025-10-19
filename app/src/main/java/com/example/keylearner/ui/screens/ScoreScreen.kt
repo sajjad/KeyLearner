@@ -326,14 +326,15 @@ fun ScoreScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Green600
+                        containerColor = Green600,
+                        contentColor = BlueLight
                     )
                 ) {
                     Text(
                         text = "Replay with Same Settings",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
-                    )
+                        )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -345,7 +346,8 @@ fun ScoreScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = SkyBlue600
+                    containerColor = SkyBlue600,
+                    contentColor = BlueLight
                 )
             ) {
                 Text(
