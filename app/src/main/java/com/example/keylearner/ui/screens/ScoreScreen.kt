@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -453,6 +454,9 @@ fun BarChartComposable(
     data: List<com.example.keylearner.viewmodel.ChartBarData>,
     modifier: Modifier = Modifier
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val textColor = if (isDarkTheme) AndroidColor.WHITE else AndroidColor.BLACK
+
     AndroidView(
         factory = { context ->
             BarChart(context).apply {
@@ -461,6 +465,7 @@ fun BarChartComposable(
                 setDrawBarShadow(false)
                 setTouchEnabled(false)
                 legend.isEnabled = true
+                legend.textColor = textColor
 
                 // X-axis configuration
                 xAxis.apply {
@@ -471,6 +476,7 @@ fun BarChartComposable(
                     valueFormatter = IndexAxisValueFormatter(data.map { it.label })
                     setCenterAxisLabels(false)
                     setAvoidFirstLastClipping(false)
+                    this.textColor = textColor
                 }
 
                 // Y-axis configuration
@@ -478,6 +484,7 @@ fun BarChartComposable(
                     setDrawGridLines(true)
                     axisMinimum = 0f
                     granularity = 1f
+                    this.textColor = textColor
                 }
                 axisRight.isEnabled = false
             }
@@ -502,7 +509,7 @@ fun BarChartComposable(
                     WrongOrange.toArgb()
                 )
                 stackLabels = arrayOf("Correct", "Wrong")
-                valueTextColor = AndroidColor.BLACK
+                valueTextColor = textColor
                 valueTextSize = 10f
                 valueFormatter = object : ValueFormatter() {
                     override fun getFormattedValue(value: Float): String {
@@ -515,8 +522,13 @@ fun BarChartComposable(
                 barWidth = 0.5f
             }
 
-            // Update X-axis labels for the new key
-            chart.xAxis.valueFormatter = IndexAxisValueFormatter(data.map { it.label })
+            // Update X-axis labels and colors for the new key
+            chart.xAxis.apply {
+                valueFormatter = IndexAxisValueFormatter(data.map { it.label })
+                this.textColor = textColor
+            }
+            chart.axisLeft.textColor = textColor
+            chart.legend.textColor = textColor
 
             chart.data = barData
             chart.invalidate()
@@ -668,6 +680,9 @@ fun LineChartComposable(
     chartData: List<ChartBarData>,
     modifier: Modifier = Modifier
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val textColor = if (isDarkTheme) AndroidColor.WHITE else AndroidColor.BLACK
+
     AndroidView(
         factory = { context ->
             com.github.mikephil.charting.charts.LineChart(context).apply {
@@ -686,6 +701,7 @@ fun LineChartComposable(
                             return "S${value.toInt()}"  // S1, S2, S3, etc.
                         }
                     }
+                    this.textColor = textColor
                 }
 
                 // Y-axis configuration
@@ -699,6 +715,7 @@ fun LineChartComposable(
                             return "${value.toInt()}%"
                         }
                     }
+                    this.textColor = textColor
                 }
                 axisRight.isEnabled = false
             }
@@ -751,13 +768,20 @@ fun LineChartComposable(
             val lineData = com.github.mikephil.charting.data.LineData(dataSets as List<com.github.mikephil.charting.interfaces.datasets.ILineDataSet>)
             chart.data = lineData
 
+            // Update axis colors
+            chart.xAxis.textColor = textColor
+            chart.axisLeft.textColor = textColor
+
             // Configure legend to appear below chart
-            chart.legend.isEnabled = true
-            chart.legend.verticalAlignment = com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.BOTTOM
-            chart.legend.horizontalAlignment = com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER
-            chart.legend.orientation = com.github.mikephil.charting.components.Legend.LegendOrientation.HORIZONTAL
-            chart.legend.setDrawInside(false)
-            chart.legend.textSize = 10f
+            chart.legend.apply {
+                isEnabled = true
+                verticalAlignment = com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.BOTTOM
+                horizontalAlignment = com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER
+                orientation = com.github.mikephil.charting.components.Legend.LegendOrientation.HORIZONTAL
+                setDrawInside(false)
+                textSize = 10f
+                this.textColor = textColor
+            }
 
             chart.invalidate()
         },
