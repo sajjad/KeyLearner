@@ -5,10 +5,16 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -45,6 +51,7 @@ fun StartScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     val isDarkTheme = isSystemInDarkTheme()
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -66,16 +73,32 @@ fun StartScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Title
-            Text(
-                text = "Learn Keys",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
-                ),
-                color = SkyBlue600,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
+            // Title with info button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Learn Keys",
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 32.sp
+                    ),
+                    color = SkyBlue600
+                )
+
+                IconButton(onClick = { showInfoDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = "About",
+                        tint = SkyBlue600,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
 
             // Card containing all settings
             Card(
@@ -169,6 +192,33 @@ fun StartScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // About Dialog
+        if (showInfoDialog) {
+            AlertDialog(
+                onDismissRequest = { showInfoDialog = false },
+                title = {
+                    Text(
+                        text = "About Learn Keys",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "This app was written for the express purpose of me trying to learn different chords in the major and minor keys. There is a chance that as my musical journey continues, I'll end up adding more learning exercises as well.\n\n" +
+                                "This app doesn't farm your data. I don't even capture crash events.\n\n" +
+                                "If the app crashes - restart it 😁\n\nSajjad",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showInfoDialog = false }) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }
