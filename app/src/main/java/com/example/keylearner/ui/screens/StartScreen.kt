@@ -75,11 +75,9 @@ fun StartScreen(
         ) {
             // Title with info button
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     text = "Learn Keys",
@@ -87,10 +85,14 @@ fun StartScreen(
                         fontWeight = FontWeight.Bold,
                         fontSize = 32.sp
                     ),
-                    color = SkyBlue600
+                    color = SkyBlue600,
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
 
-                IconButton(onClick = { showInfoDialog = true }) {
+                IconButton(
+                    onClick = { showInfoDialog = true },
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = "About",
