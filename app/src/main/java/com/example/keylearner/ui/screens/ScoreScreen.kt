@@ -62,6 +62,7 @@ fun ScoreScreen(
     val selectedPositions by viewModel.selectedPositions.collectAsState()
     val progressData by viewModel.progressData.collectAsState()
     val exportImportStatus by viewModel.exportImportStatus.collectAsState()
+    val currentGameScoresState by viewModel.currentGameScores.collectAsState()
 
     var availableKeys by remember { mutableStateOf(currentGameScores?.getPlayedKeys() ?: emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -242,8 +243,30 @@ fun ScoreScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     when (viewMode) {
                         ViewMode.CURRENT_GAME -> {
-                            val stats = viewModel.getCurrentGameStats()
-                            if (stats != null) {
+                            // Derive stats from observed StateFlow
+                            currentGameScoresState?.let { scores ->
+                                var totalCorrect = 0
+                                var totalWrong = 0
+
+                                scores.keyScores.values.forEach { keyScore ->
+                                    totalCorrect += keyScore.getTotalCorrect()
+                                    totalWrong += keyScore.getTotalWrong()
+                                }
+
+                                val totalAttempts = totalCorrect + totalWrong
+                                val accuracy = if (totalAttempts > 0) {
+                                    (totalCorrect.toFloat() / totalAttempts * 100)
+                                } else {
+                                    0f
+                                }
+
+                                val stats = com.example.keylearner.viewmodel.GameStats(
+                                    totalQuestions = totalAttempts,
+                                    correctAnswers = totalCorrect,
+                                    wrongAnswers = totalWrong,
+                                    accuracy = accuracy
+                                )
+
                                 CurrentGameStatistics(stats)
                             }
                         }
