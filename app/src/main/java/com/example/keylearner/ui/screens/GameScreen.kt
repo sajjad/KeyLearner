@@ -78,6 +78,7 @@ fun GameScreen(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -209,6 +210,7 @@ fun GameScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .padding(16.dp)
             ) {
                 // Quit Button
@@ -415,12 +417,12 @@ private fun FullChoicesMode(
     } else {
         Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(12.dp)
             .verticalScroll(rememberScrollState())
     }
 
-    val spacing = if (isLandscape) 8.dp else 16.dp
-    val buttonHeight = if (isLandscape) 44.dp else 48.dp
+    val spacing = if (isLandscape) 8.dp else 8.dp
+    val buttonHeight = if (isLandscape) 44.dp else 44.dp
 
     Column(
         modifier = modifier,
@@ -513,14 +515,14 @@ private fun FullChoicesMode(
             }
         }
 
-        Spacer(modifier = Modifier.height(if (isLandscape) 12.dp else 16.dp))
+        Spacer(modifier = Modifier.height(if (isLandscape) 12.dp else 12.dp))
 
         // Submit Button
         Button(
             onClick = onSubmit,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (isLandscape) 48.dp else 56.dp),
+                .height(if (isLandscape) 48.dp else 52.dp),
             enabled = selectedAnswer.isComplete(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Green600
