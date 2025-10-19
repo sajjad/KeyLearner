@@ -70,6 +70,13 @@ When someone says "Let's play a 1-4-5 progression in Em" or "Let's jam in the ke
 
 ---
 
+### Score Screen - Game Result
+*See the score of a game*
+
+![Score Screen - Game Result](screenshots/score_game.png)
+
+---
+
 ### Score Screen - All Time Statistics
 *Track your progress over time with cumulative stats and historical data.*
 
