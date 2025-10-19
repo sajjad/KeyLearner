@@ -45,49 +45,49 @@ When someone says "Let's play a 1-4-5 progression in Em" or "Let's jam in the ke
 ### Start Screen
 *Configure your practice session with key selection, question count, timer delay, and answer mode.*
 
-![Start Screen](screenshots/start_screen.png)
+![Start Screen](imgs/start_screen.png)
 
 ---
 
 ### Game Screen - Limited Mode
 *Quick practice: Select the correct chord from 7 shuffled options.*
 
-![Game Screen - Limited Mode](screenshots/game_limited.png)
+![Game Screen - Limited Mode](imgs/game_limited.png)
 
 ---
 
 ### Game Screen - Full Mode
 *Advanced practice: Build the chord by selecting note, quality, and accidental.*
 
-![Game Screen - Full Mode](screenshots/game_full.png)
+![Game Screen - Full Mode](imgs/game_full.png)
 
 ---
 
 ### Score Screen - Current Game
 *Review your performance with detailed statistics and position-by-position breakdown.*
 
-![Score Screen - Current Game](screenshots/score_current.png)
+![Score Screen - Current Game](imgs/score_current.png)
 
 ---
 
 ### Score Screen - Game Result
 *See the score of a game*
 
-![Score Screen - Game Result](screenshots/score_game.png)
+![Score Screen - Game Result](imgs/score_game.png)
 
 ---
 
 ### Score Screen - All Time Statistics
 *Track your progress over time with cumulative stats and historical data.*
 
-![Score Screen - All Time](screenshots/score_all_time.png)
+![Score Screen - All Time](imgs/score_all_time.png)
 
 ---
 
 ### Progress Tracking
 *Multi-line charts showing accuracy trends for multiple chord positions over time.*
 
-![Progress Tracking](screenshots/progress_tracking.png)
+![Progress Tracking](imgs/progress_tracking.png)
 
 ---
 
