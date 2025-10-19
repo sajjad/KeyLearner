@@ -1,6 +1,7 @@
 package com.example.keylearner.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +24,8 @@ import com.example.keylearner.ui.theme.SkyBlue600
 import com.example.keylearner.ui.theme.Blue600
 import com.example.keylearner.ui.theme.Green600
 import com.example.keylearner.ui.theme.Teal600
+import com.example.keylearner.ui.theme.DarkGrey800
+import com.example.keylearner.ui.theme.DarkGrey900
 import com.example.keylearner.viewmodel.StartScreenViewModel
 
 /**
@@ -41,13 +44,18 @@ fun StartScreen(
     viewModel: StartScreenViewModel = viewModel()
 ) {
     val settings by viewModel.settings.collectAsState()
+    val isDarkTheme = isSystemInDarkTheme()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(SkyBlueLight, BlueLight)
+                    colors = if (isDarkTheme) {
+                        listOf(DarkGrey800, DarkGrey900)
+                    } else {
+                        listOf(SkyBlueLight, BlueLight)
+                    }
                 )
             )
     ) {

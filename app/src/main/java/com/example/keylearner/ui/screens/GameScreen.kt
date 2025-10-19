@@ -2,6 +2,7 @@ package com.example.keylearner.ui.screens
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,13 +64,18 @@ fun GameScreen(
     val state = gameState!!
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val isDarkTheme = isSystemInDarkTheme()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(SkyBlueLight, BlueLight)
+                    colors = if (isDarkTheme) {
+                        listOf(DarkGrey800, DarkGrey900)
+                    } else {
+                        listOf(SkyBlueLight, BlueLight)
+                    }
                 )
             )
     ) {

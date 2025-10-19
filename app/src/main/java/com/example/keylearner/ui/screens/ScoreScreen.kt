@@ -87,12 +87,18 @@ fun ScoreScreen(
         }
     }
 
+    val isDarkTheme = isSystemInDarkTheme()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(GreenLight, TealLight)
+                    colors = if (isDarkTheme) {
+                        listOf(DarkGrey800, DarkGrey900)
+                    } else {
+                        listOf(GreenLight, TealLight)
+                    }
                 )
             )
     ) {

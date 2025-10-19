@@ -32,3 +32,7 @@ val Green600 = Color(0xFF27AE60)      // Green for success
 val Teal600 = Color(0xFF009688)       // Teal for accents
 val Indigo100 = Color(0xFFC5CAE9)     // Indigo for game screen
 val Purple100 = Color(0xFFE1BEE7)     // Purple for game screen
+
+// Dark mode gradients
+val DarkGrey800 = Color(0xFF1E1E1E)   // Dark grey for dark mode backgrounds
+val DarkGrey900 = Color(0xFF121212)   // Darker grey for dark mode backgrounds
