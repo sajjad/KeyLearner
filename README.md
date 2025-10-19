@@ -45,8 +45,7 @@ When someone says "Let's play a 1-4-5 progression in Em" or "Let's jam in the ke
 ### Start Screen
 *Configure your practice session with key selection, question count, timer delay, and answer mode.*
 
-![Start Screen](imgs/start_screen.png)
-
+<a href="imgs/start_screen.png"><img src="imgs/start_screen.png" alt="Start Screen" height="300"></a>
 ---
 
 ### Game Screen - Limited Mode
