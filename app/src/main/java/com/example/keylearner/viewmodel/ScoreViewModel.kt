@@ -55,11 +55,10 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             loadCumulativeStats()
         }
 
-        // Auto-select first key and position 1
+        // Auto-select first key
         val firstKey = scores.getPlayedKeys().firstOrNull()
         if (firstKey != null) {
             selectKey(firstKey)
-            togglePosition(1)  // Auto-select position 1
         }
     }
 
@@ -89,7 +88,6 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             val keys = scoreRepository.getAllKeysPlayed().toList().sorted()
             keys.firstOrNull()?.let { key ->
                 selectKey(key)
-                togglePosition(1)  // Auto-select position 1
             }
         }
     }
