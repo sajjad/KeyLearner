@@ -295,6 +295,24 @@ com.example.keylearner/
 
 ---
 
+## Phase 11: Game Screen Enhancements
+**Status:** ✅ Complete
+
+### Tasks:
+- [x] **Circular Countdown Timer**:
+  - Add animated circular progress indicator around the chord position number
+  - Circle should animate smoothly as it disappears, synchronized with the delay timer
+  - Progress starts at full circle (360°) and decreases to 0° as countdown approaches 0
+  - Circle should reset instantly (no animation) when moving to next question
+  - Use Canvas/CustomPainter for smooth circular animation
+  - Stroke width: ~8dp, colour: Green (#27AE60) or theme primary colour
+  - Animation should be frame-perfect and not jump backwards when resetting
+  - Only show circle when delay > 0 (hide in instant mode)
+  - Integrated into both landscape and portrait modes
+  - Circle size: 160dp (landscape), 200dp (portrait)
+
+---
+
 ## Status Legend:
 - ⏳ **Pending** - Not started
 - 🚧 **In Progress** - Currently working on

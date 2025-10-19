@@ -71,10 +71,10 @@ class GameViewModel : ViewModel() {
 
         timerJob = viewModelScope.launch {
             while (true) {
-                delay(100) // Update every 100ms
+                delay(50) // Update every 50ms for smoother animation
 
                 val current = _gameState.value ?: break
-                val newCountdown = current.countdown - 0.1f
+                val newCountdown = current.countdown - 0.05f
 
                 if (newCountdown <= 0) {
                     // Timer expired - change to new random position

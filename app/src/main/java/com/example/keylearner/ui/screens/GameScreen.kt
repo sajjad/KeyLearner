@@ -1,6 +1,7 @@
 package com.example.keylearner.ui.screens
 
 import android.content.res.Configuration
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -12,10 +13,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -145,32 +153,35 @@ fun GameScreen(
                             .weight(1f),
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
-                        Column(
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Chord Position",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = state.currentPosition.toString(),
-                                style = MaterialTheme.typography.displayLarge.copy(
-                                    fontSize = 72.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            if (settings.delay > 0) {
-                                Text(
-                                    text = "Next: ${String.format("%.1f", state.countdown)}s",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
-                                )
+                            CircularCountdownTimer(
+                                countdown = state.countdown,
+                                totalDuration = settings.delay,
+                                modifier = Modifier.size(160.dp)
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "Chord Position",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = state.currentPosition.toString(),
+                                        style = MaterialTheme.typography.displayLarge.copy(
+                                            fontSize = 72.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     }
@@ -275,31 +286,35 @@ fun GameScreen(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Chord Position",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = state.currentPosition.toString(),
-                            style = MaterialTheme.typography.displayLarge.copy(
-                                fontSize = 80.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        if (settings.delay > 0) {
-                            Text(
-                                text = "Next in: ${String.format("%.1f", state.countdown)}s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
+                        CircularCountdownTimer(
+                            countdown = state.countdown,
+                            totalDuration = settings.delay,
+                            modifier = Modifier.size(200.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Chord Position",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = state.currentPosition.toString(),
+                                    style = MaterialTheme.typography.displayLarge.copy(
+                                        fontSize = 80.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
@@ -569,5 +584,74 @@ private fun SelectionButton(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium
         )
+    }
+}
+
+/**
+ * Circular countdown timer that wraps around content
+ * Shows progress as an animated arc that decreases from 360° to 0°
+ * Uses linear interpolation for smooth animation, instant reset on new question
+ */
+@Composable
+private fun CircularCountdownTimer(
+    countdown: Float,
+    totalDuration: Float,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        // Draw circular progress
+        if (totalDuration > 0) {
+            val targetProgress = (countdown / totalDuration).coerceIn(0f, 1f)
+
+            // Track previous progress to detect resets
+            val previousProgress = remember { mutableStateOf(targetProgress) }
+
+            // Detect if this is a reset (progress jumped up significantly)
+            val isReset = targetProgress > previousProgress.value + 0.1f
+
+            // Animate progress with linear interpolation for countdown,
+            // but snap instantly for resets
+            val animatedProgress by animateFloatAsState(
+                targetValue = targetProgress,
+                animationSpec = if (isReset) {
+                    snap() // Instant update on reset
+                } else {
+                    tween(
+                        durationMillis = 50, // Smooth interpolation over 50ms (matches timer update frequency)
+                        easing = LinearEasing
+                    )
+                },
+                label = "countdown_progress",
+                finishedListener = {
+                    previousProgress.value = it
+                }
+            )
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokeWidth = 8.dp.toPx()
+                val diameter = size.minDimension - strokeWidth
+                val radius = diameter / 2
+
+                // Draw the arc from top (-90°) clockwise
+                // Sweep angle = progress * 360°
+                drawArc(
+                    color = androidx.compose.ui.graphics.Color(0xFF27AE60), // CorrectGreen
+                    startAngle = -90f,
+                    sweepAngle = animatedProgress * 360f,
+                    useCenter = false,
+                    style = Stroke(
+                        width = strokeWidth,
+                        cap = StrokeCap.Round
+                    )
+                )
+            }
+        }
+
+        // Content in the center
+        content()
     }
 }
