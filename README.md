@@ -1,3 +1,6 @@
+
+Note: This app was built entirely using Claude Code. I wanted to see how well Claude Code works for languages / build pipelines I have no familiarity with.
+
 # KeyLearner
 
 **Learn chord progressions by position in any musical key**
