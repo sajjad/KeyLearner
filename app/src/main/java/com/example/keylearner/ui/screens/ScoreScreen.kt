@@ -811,7 +811,7 @@ fun ResponseTimeAnalysisSection(
                                         color = Color.Gray
                                     )
                                     Text(
-                                        text = String.format("%.1fs", stats.averageTime),
+                                        text = String.format("%.2fs", stats.averageTime),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -825,7 +825,7 @@ fun ResponseTimeAnalysisSection(
                                         color = Color.Gray
                                     )
                                     Text(
-                                        text = String.format("%.1fs", stats.fastestTime),
+                                        text = String.format("%.2fs", stats.fastestTime),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = CorrectGreen
@@ -840,7 +840,7 @@ fun ResponseTimeAnalysisSection(
                                         color = Color.Gray
                                     )
                                     Text(
-                                        text = String.format("%.1fs", stats.slowestTime),
+                                        text = String.format("%.2fs", stats.slowestTime),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = WrongOrange
@@ -862,7 +862,7 @@ fun ResponseTimeAnalysisSection(
                                         color = Color.Gray
                                     )
                                     Text(
-                                        text = String.format("%.1fs", stats.averageCorrectTime),
+                                        text = String.format("%.2fs", stats.averageCorrectTime),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = CorrectGreen
@@ -876,7 +876,7 @@ fun ResponseTimeAnalysisSection(
                                         color = Color.Gray
                                     )
                                     Text(
-                                        text = String.format("%.1fs", stats.averageIncorrectTime),
+                                        text = String.format("%.2fs", stats.averageIncorrectTime),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = WrongOrange
@@ -1155,7 +1155,7 @@ fun ResponseTimeScatterChartComposable(
                     granularity = 0.5f
                     valueFormatter = object : ValueFormatter() {
                         override fun getFormattedValue(value: Float): String {
-                            return String.format("%.1fs", value)
+                            return String.format("%.2fs", value)
                         }
                     }
                     this.textColor = textColor

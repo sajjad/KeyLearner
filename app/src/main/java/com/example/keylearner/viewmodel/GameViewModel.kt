@@ -129,7 +129,7 @@ class GameViewModel : ViewModel() {
 
         // Calculate response time
         val responseTimeMs = System.currentTimeMillis() - questionStartTime
-        val responseTimeSeconds = (responseTimeMs / 100.0f).toInt() / 10.0f // Round to 1 decimal place
+        val responseTimeSeconds = (responseTimeMs / 10.0f).toInt() / 100.0f // Round to 2 decimal places
 
         val correctChord = MusicTheory.getChord(
             current.currentKey,
