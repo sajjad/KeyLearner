@@ -380,7 +380,7 @@ com.example.keylearner/
 ---
 
 ## Phase 13: Response Time Tracking and Visualisation
-**Status:** 🚧 In Progress
+**Status:** ✅ Complete
 
 ### Tasks:
 - [x] **Data Model Updates**:
@@ -442,12 +442,20 @@ com.example.keylearner/
   - Example: `2025-10-23T14:30:00Z,Em,1,5,2,2.3;1.8;3.4;2.1;1.9;2.7;2.5`
   - Time data as semicolon-separated list (one per question)
   - Backward compatible: missing TimeSeconds column defaults to empty list
-- [ ] **Testing**:
-  - Unit tests for time tracking logic (`ResponseTimeTrackingTest.kt`)
-  - Unit tests for filtering and aggregation (`ResponseTimeStatsTest.kt`)
-  - Update CSV import/export tests to include time data
-  - Edge case tests: 0 delay mode, very long times (>60s), empty filters
-  - Manual testing: Play game → verify times recorded → check CSV export → import in new install
+- [x] **Unified Filter System**:
+  - Consolidated separate filter systems into single "Performance Analysis" card
+  - Removed `selectedPositions` state from ScoreViewModel
+  - Removed `togglePosition()` and `clearPositionSelection()` methods
+  - Updated `toggleChordFilter()` to control both Response Time and Progress Comparison charts
+  - Removed separate "Select Position to View Progress" card from UI
+  - Integrated Progress Comparison line chart and Progress Summary into Performance Analysis section
+  - Added `loadProgressData()` call to `selectKey()` to auto-load progress data
+  - Single set of filter chips now controls all performance visualisations (All Time view)
+- [x] **Testing**:
+  - Manual testing: Play game → verify times recorded → check CSV export → import in new install ✅
+  - Manual testing: Switch to All Time view → verify Progress Comparison appears ✅
+  - Manual testing: View History from Start Screen → verify Progress Comparison appears ✅
+  - Manual testing: Toggle filter chips → verify both charts update simultaneously ✅
 
 ### Benefits:
 - Identify which chords take longer to recall

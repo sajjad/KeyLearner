@@ -39,9 +39,6 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _chartData = MutableStateFlow<List<ChartBarData>>(emptyList())
     val chartData: StateFlow<List<ChartBarData>> = _chartData.asStateFlow()
 
-    private val _selectedPositions = MutableStateFlow<Set<Int>>(emptySet())
-    val selectedPositions: StateFlow<Set<Int>> = _selectedPositions.asStateFlow()
-
     private val _progressData = MutableStateFlow<Map<Int, List<PositionProgressPoint>>>(emptyMap())
     val progressData: StateFlow<Map<Int, List<PositionProgressPoint>>> = _progressData.asStateFlow()
 
@@ -114,6 +111,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         _selectedKey.value = keyName
         updateChartData(keyName)
         loadResponseTimeData(keyName)
+        loadProgressData()
     }
 
     /**
@@ -241,26 +239,6 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    /**
-     * Toggle a position for viewing progress data
-     */
-    fun togglePosition(position: Int) {
-        val current = _selectedPositions.value
-        _selectedPositions.value = if (position in current) {
-            current - position  // Remove if already selected
-        } else {
-            current + position  // Add if not selected
-        }
-        loadProgressData()
-    }
-
-    /**
-     * Clear position selection
-     */
-    fun clearPositionSelection() {
-        _selectedPositions.value = emptySet()
-        _progressData.value = emptyMap()
-    }
 
     /**
      * Load response time data for the selected key
@@ -281,7 +259,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Toggle a chord filter for response time chart
+     * Toggle a chord filter for response time chart and progress comparison
      */
     fun toggleChordFilter(position: Int) {
         val current = _selectedChordFilters.value
@@ -291,6 +269,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             current + position  // Add if not selected
         }
         updateResponseTimeStats()
+        loadProgressData()
     }
 
     /**
@@ -333,11 +312,11 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Load progress data for selected key and all selected positions
+     * Load progress data for selected key and all selected chord filter positions
      */
     private fun loadProgressData() {
         val key = _selectedKey.value ?: return
-        val positions = _selectedPositions.value
+        val positions = _selectedChordFilters.value
 
         if (positions.isEmpty()) {
             _progressData.value = emptyMap()
@@ -491,8 +470,8 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                 _selectedKey.value?.let { updateChartData(it) }
             }
 
-            // Reload progress data if positions are selected
-            if (_selectedPositions.value.isNotEmpty()) {
+            // Reload progress data if chord filters are selected
+            if (_selectedChordFilters.value.isNotEmpty()) {
                 loadProgressData()
             }
         }

@@ -59,10 +59,10 @@ fun ScoreScreen(
     val selectedKey by viewModel.selectedKey.collectAsState()
     val chartData by viewModel.chartData.collectAsState()
     val cumulativeStats by viewModel.cumulativeStats.collectAsState()
-    val selectedPositions by viewModel.selectedPositions.collectAsState()
     val progressData by viewModel.progressData.collectAsState()
     val exportImportStatus by viewModel.exportImportStatus.collectAsState()
     val currentGameScoresState by viewModel.currentGameScores.collectAsState()
+    val selectedChordFilters by viewModel.selectedChordFilters.collectAsState()
 
     var availableKeys by remember { mutableStateOf(currentGameScores?.getPlayedKeys() ?: emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -356,73 +356,15 @@ fun ScoreScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Response Time Analysis Section
+            // Performance Analysis Section (Response Time + Progress Comparison)
             if (selectedKey != null) {
                 ResponseTimeAnalysisSection(
                     viewModel = viewModel,
                     selectedKey = selectedKey!!,
-                    chartData = chartData
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Define position colors (used for progress chart and position selector)
-            val positionColors = listOf(
-                CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
-                Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
-                Color(0xFF34495E)
-            )
-
-            // Position Selector (All Time view only)
-            if (viewMode == ViewMode.ALL_TIME && selectedKey != null) {
-                PositionSelectorCard(
-                    selectedKey = selectedKey!!,
-                    selectedPositions = selectedPositions,
-                    onPositionToggled = { position: Int ->
-                        viewModel.togglePosition(position)
-                    },
                     chartData = chartData,
-                    positionColors = positionColors
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Progress visualisation (shown when positions are selected in All Time view)
-            if (viewMode == ViewMode.ALL_TIME && selectedPositions.isNotEmpty() && progressData.isNotEmpty()) {
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp),  // Taller for legend
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Progress Comparison",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        LineChartComposable(
-                            dataMap = progressData,
-                            positionColors = positionColors,
-                            chartData = chartData,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Compact summary card
-                ProgressSummaryCard(
-                    selectedPositions = selectedPositions,
+                    viewMode = viewMode,
                     progressData = progressData,
-                    positionColors = positionColors,
-                    chartData = chartData
+                    selectedChordFilters = selectedChordFilters
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -561,18 +503,20 @@ fun StatItem(label: String, value: String, color: Color = Color.DarkGray) {
 }
 
 /**
- * Response Time Analysis Section
+ * Performance Analysis Section
  *
- * Displays chord filter chips, scatter chart, and statistics
+ * Displays chord filter chips, response time scatter chart, progress comparison line chart, and statistics
  */
 @Composable
 fun ResponseTimeAnalysisSection(
     viewModel: ScoreViewModel,
     selectedKey: String,
-    chartData: List<ChartBarData>
+    chartData: List<ChartBarData>,
+    viewMode: ViewMode,
+    progressData: Map<Int, List<PositionProgressPoint>>,
+    selectedChordFilters: Set<Int>
 ) {
     val responseTimeData by viewModel.responseTimeData.collectAsState()
-    val selectedChordFilters by viewModel.selectedChordFilters.collectAsState()
     val responseTimeStats by viewModel.responseTimeStats.collectAsState()
 
     // Get filtered data for the chart - recalculate when dependencies change
@@ -590,7 +534,7 @@ fun ResponseTimeAnalysisSection(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Response Time Analysis",
+                text = "Performance Analysis",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -875,6 +819,58 @@ fun ResponseTimeAnalysisSection(
                     )
                 }
             }
+
+            // Progress Comparison (All Time view only)
+            if (viewMode == ViewMode.ALL_TIME && selectedChordFilters.isNotEmpty() && progressData.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Progress Comparison Line Chart
+                Text(
+                    text = "Progress Comparison",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(350.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    // Define position colors (used for progress chart)
+                    val positionColors = listOf(
+                        CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
+                        Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
+                        Color(0xFF34495E)
+                    )
+
+                    LineChartComposable(
+                        dataMap = progressData,
+                        positionColors = positionColors,
+                        chartData = chartData,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Progress Summary
+                ProgressSummaryCard(
+                    selectedPositions = selectedChordFilters,
+                    progressData = progressData,
+                    positionColors = listOf(
+                        CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
+                        Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
+                        Color(0xFF34495E)
+                    ),
+                    chartData = chartData
+                )
+            }
         }
     }
 }
@@ -965,160 +961,6 @@ fun BarChartComposable(
         },
         modifier = modifier
     )
-}
-
-/**
- * Position selector card with chord chips (multi-select enabled)
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PositionSelectorCard(
-    selectedKey: String,
-    selectedPositions: Set<Int>,
-    onPositionToggled: (Int) -> Unit,
-    chartData: List<ChartBarData>,
-    positionColors: List<Color>
-) {
-    // Define note colors (A-G)
-    val noteColors = mapOf(
-        "A" to Color(0xFF00AA00),  // Green
-        "B" to Color(0xFF0066CC),  // Blue
-        "C" to Color(0xFFCC0000),  // Red
-        "D" to Color(0xFFFFDD00),  // Yellow
-        "E" to Color(0xFF87CEEB),  // Sky Blue
-        "F" to Color(0xFF8B00FF),  // Violet
-        "G" to Color(0xFFFF8800)   // Orange
-    )
-
-    // Determine if minor key
-    val isMinor = selectedKey.endsWith("m")
-    val rootKey = if (isMinor) selectedKey.dropLast(1) else selectedKey
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Select Position to View Progress",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            // Row 1: Positions 1-4
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                for (position in 1..4) {
-                    val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
-                    // Extract root note from chord label and get its color
-                    val chord = com.example.keylearner.data.MusicTheory.getChord(rootKey, isMinor, position)
-                    val rootNote = chord.note.replace("#", "").replace("♭", "").first().toString()
-                    val lineColor = noteColors[rootNote] ?: Color.Gray
-                    FilterChip(
-                        selected = position in selectedPositions,
-                        onClick = { onPositionToggled(position) },
-                        label = {
-                            Text(
-                                text = chordLabel,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1
-                            )
-                        },
-                        leadingIcon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(14.dp)
-                                    .background(
-                                        color = Color(0xFFEEEEEE),
-                                        shape = MaterialTheme.shapes.extraSmall
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(
-                                            color = lineColor,
-                                            shape = androidx.compose.foundation.shape.CircleShape
-                                        )
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Teal600,
-                            selectedLabelColor = Color.White
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = position in selectedPositions
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Row 2: Positions 5-7
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                for (position in 5..7) {
-                    val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
-                    // Extract root note from chord label and get its color
-                    val chord = com.example.keylearner.data.MusicTheory.getChord(rootKey, isMinor, position)
-                    val rootNote = chord.note.replace("#", "").replace("♭", "").first().toString()
-                    val lineColor = noteColors[rootNote] ?: Color.Gray
-                    FilterChip(
-                        selected = position in selectedPositions,
-                        onClick = { onPositionToggled(position) },
-                        label = {
-                            Text(
-                                text = chordLabel,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1
-                            )
-                        },
-                        leadingIcon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(14.dp)
-                                    .background(
-                                        color = Color(0xFFEEEEEE),
-                                        shape = MaterialTheme.shapes.extraSmall
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(
-                                            color = lineColor,
-                                            shape = androidx.compose.foundation.shape.CircleShape
-                                        )
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Teal600,
-                            selectedLabelColor = Color.White
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = position in selectedPositions
-                        )
-                    )
-                }
-                // Add spacer to balance the row
-                Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-    }
 }
 
 /**
