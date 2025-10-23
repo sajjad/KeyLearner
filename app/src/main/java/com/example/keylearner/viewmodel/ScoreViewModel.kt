@@ -273,6 +273,24 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * Clear all chord filters (deselect all positions)
+     */
+    fun clearAllChordFilters() {
+        _selectedChordFilters.value = emptySet()
+        updateResponseTimeStats()
+        loadProgressData()
+    }
+
+    /**
+     * Select all chord filters (select all 7 positions)
+     */
+    fun selectAllChordFilters() {
+        _selectedChordFilters.value = (1..7).toSet()
+        updateResponseTimeStats()
+        loadProgressData()
+    }
+
+    /**
      * Get filtered response time data
      */
     fun getFilteredResponseTimeData(): List<ResponseTimePoint> {
@@ -290,17 +308,25 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val scores = _currentGameScores.value
-        if (scores == null) {
-            _responseTimeStats.value = null
-            return
+        // Calculate statistics directly from filtered data
+        val avgTime = filtered.map { it.responseTimeSeconds }.average().toFloat()
+        val fastestTime = filtered.minOf { it.responseTimeSeconds }
+        val slowestTime = filtered.maxOf { it.responseTimeSeconds }
+
+        val correctTimes = filtered.filter { it.isCorrect }.map { it.responseTimeSeconds }
+        val incorrectTimes = filtered.filter { !it.isCorrect }.map { it.responseTimeSeconds }
+
+        val avgCorrectTime = if (correctTimes.isNotEmpty()) {
+            correctTimes.average().toFloat()
+        } else {
+            0f
         }
 
-        val avgTime = scores.getAverageResponseTime(filtered)
-        val fastestTime = scores.getFastestResponseTime(filtered)
-        val slowestTime = scores.getSlowestResponseTime(filtered)
-        val avgCorrectTime = scores.getAverageCorrectResponseTime(filtered)
-        val avgIncorrectTime = scores.getAverageIncorrectResponseTime(filtered)
+        val avgIncorrectTime = if (incorrectTimes.isNotEmpty()) {
+            incorrectTimes.average().toFloat()
+        } else {
+            0f
+        }
 
         _responseTimeStats.value = ResponseTimeStats(
             averageTime = avgTime,

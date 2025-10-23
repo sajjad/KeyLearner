@@ -672,12 +672,41 @@ fun ResponseTimeAnalysisSection(
                         )
                     )
                 }
-                // Add empty spacers for alignment (since row 2 only has 3 items)
-                Spacer(modifier = Modifier.weight(1f))
+
+                // Clear All / Select All toggle button
+                val allCleared = selectedChordFilters.isEmpty()
+                FilterChip(
+                    selected = !allCleared,  // Selected when chips are active
+                    onClick = {
+                        if (allCleared) {
+                            viewModel.selectAllChordFilters()
+                        } else {
+                            viewModel.clearAllChordFilters()
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = if (allCleared) "Select All" else "Clear All",
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFE74C3C),  // Red when clearing
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.LightGray,
+                        labelColor = Color.DarkGray
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = !allCleared
+                    )
+                )
             }
 
             // Scatter Chart
-            if (filteredData.isNotEmpty()) {
+            if (responseTimeData.isNotEmpty()) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -697,8 +726,64 @@ fun ResponseTimeAnalysisSection(
                         )
                     }
                 }
+            } else {
+                // No response time data available at all
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No response time data available",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
 
-                // Statistics Card
+            // Progress Comparison (All Time view only)
+            if (viewMode == ViewMode.ALL_TIME && selectedChordFilters.isNotEmpty() && progressData.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Progress Comparison Line Chart
+                Text(
+                    text = "Progress Comparison",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(350.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    // Define position colors (used for progress chart)
+                    val positionColors = listOf(
+                        CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
+                        Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
+                        Color(0xFF34495E)
+                    )
+
+                    LineChartComposable(
+                        dataMap = progressData,
+                        positionColors = positionColors,
+                        chartData = chartData,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Statistics Card (only show if there's response time data and filtered data)
+            if (responseTimeData.isNotEmpty() && filteredData.isNotEmpty()) {
                 responseTimeStats?.let { stats ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -801,75 +886,6 @@ fun ResponseTimeAnalysisSection(
                         }
                     }
                 }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (responseTimeData.isEmpty()) {
-                            "No response time data available"
-                        } else {
-                            "Select at least one position to view response times"
-                        },
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            // Progress Comparison (All Time view only)
-            if (viewMode == ViewMode.ALL_TIME && selectedChordFilters.isNotEmpty() && progressData.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Progress Comparison Line Chart
-                Text(
-                    text = "Progress Comparison",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(350.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    // Define position colors (used for progress chart)
-                    val positionColors = listOf(
-                        CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
-                        Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
-                        Color(0xFF34495E)
-                    )
-
-                    LineChartComposable(
-                        dataMap = progressData,
-                        positionColors = positionColors,
-                        chartData = chartData,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Progress Summary
-                ProgressSummaryCard(
-                    selectedPositions = selectedChordFilters,
-                    progressData = progressData,
-                    positionColors = listOf(
-                        CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
-                        Color(0xFFE67E22), Color(0xFFE74C3C), Color(0xFF1ABC9C),
-                        Color(0xFF34495E)
-                    ),
-                    chartData = chartData
-                )
             }
         }
     }
@@ -1094,92 +1110,6 @@ fun LineChartComposable(
         },
         modifier = modifier
     )
-}
-
-/**
- * Compact summary card showing progress metrics for each selected position
- */
-@Composable
-fun ProgressSummaryCard(
-    selectedPositions: Set<Int>,
-    progressData: Map<Int, List<PositionProgressPoint>>,
-    positionColors: List<Color>,
-    chartData: List<ChartBarData>
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Progress Summary",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            selectedPositions.sorted().forEach { position ->
-                val data = progressData[position] ?: emptyList()
-                if (data.isNotEmpty()) {
-                    val color = positionColors[position - 1]
-                    val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
-                    val firstAccuracy = data.first().accuracy
-                    val latestAccuracy = data.last().accuracy
-                    val improvement = latestAccuracy - firstAccuracy
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Color indicator
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .background(color, shape = MaterialTheme.shapes.small)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = chordLabel,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        Row {
-                            Text(
-                                text = "${String.format("%.0f", latestAccuracy)}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            val arrow = when {
-                                improvement > 5f -> "↑"
-                                improvement < -5f -> "↓"
-                                else -> "→"
-                            }
-                            val improvementColor = when {
-                                improvement > 5f -> Green600
-                                improvement < -5f -> WrongOrange
-                                else -> Color.Gray
-                            }
-                            Text(
-                                text = "$arrow${String.format("%.0f", kotlin.math.abs(improvement))}%",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = improvementColor
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 /**
