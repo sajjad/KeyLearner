@@ -22,6 +22,7 @@ When someone says "Let's play a 1-4-5 progression in Em" or "Let's jam in the ke
 ### 📊 **Comprehensive Score Tracking**
 - View current game results or all-time statistics
 - Bar charts showing correct vs. wrong answers per chord position
+- Response time tracking with scatter charts (2 decimal place precision)
 - Progress tracking with multi-line charts showing improvement over time
 - Accuracy percentages and practice statistics
 
@@ -38,8 +39,10 @@ When someone says "Let's play a 1-4-5 progression in Em" or "Let's jam in the ke
 ### 📈 **Progress Visualisation**
 - Track improvement for specific chord positions over time
 - Multi-select comparison of up to 7 positions simultaneously
-- Colour-coded accuracy trends
+- Response time analysis with scatter charts showing speed trends
+- Colour-coded accuracy trends by note (A-G)
 - Session-by-session breakdown
+- Unified filter system controlling multiple chart views
 
 ## Screenshots
 
@@ -145,8 +148,12 @@ com.example.keylearner/
 - ✅ Enharmonic chord name handling
 - ✅ Circular countdown timer animation
 - ✅ Real-time score tracking
-- ✅ CSV import/export with validation
+- ✅ Response time tracking (2 decimal place precision)
+- ✅ CSV import/export with validation and response time data
 - ✅ Progress charts with multi-select positions
+- ✅ Unified filter system for performance analysis
+- ✅ Scatter charts for response time visualisation
+- ✅ Independent X-axis numbering per position in historical view
 - ✅ Responsive landscape/portrait layouts
 - ✅ Smooth navigation transitions
 
@@ -196,10 +203,10 @@ com.example.keylearner/
 Score history is exported in a simple CSV format for easy backup and analysis:
 
 ```csv
-Timestamp,Key,Position,Correct,Wrong
-2025-10-19T14:30:00Z,C,1,5,2
-2025-10-19T14:30:00Z,C,2,3,4
-2025-10-19T14:30:00Z,Em,1,7,1
+Timestamp,Key,Position,Correct,Wrong,TimeSeconds
+2025-10-23T14:30:00Z,C,1,5,2,2.34;1.87;3.45;2.12;1.95;2.67;2.51
+2025-10-23T14:30:00Z,C,2,3,4,3.21;4.56;2.89;1.98;3.12;2.45;2.78
+2025-10-23T14:30:00Z,Em,1,7,1,1.56;2.34;1.89;2.45;1.78;2.12;1.93;2.67
 ```
 
 - **Timestamp**: ISO 8601 format (UTC)
@@ -207,6 +214,9 @@ Timestamp,Key,Position,Correct,Wrong
 - **Position**: Chord position 1-7
 - **Correct**: Number of correct answers
 - **Wrong**: Number of wrong answers
+- **TimeSeconds**: Semicolon-separated response times in seconds (2 decimal places)
+  - One time value per question asked
+  - Backward compatible: missing column defaults to empty list
 
 ## Contributing
 

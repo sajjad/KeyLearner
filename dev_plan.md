@@ -451,11 +451,26 @@ com.example.keylearner/
   - Integrated Progress Comparison line chart and Progress Summary into Performance Analysis section
   - Added `loadProgressData()` call to `selectKey()` to auto-load progress data
   - Single set of filter chips now controls all performance visualisations (All Time view)
+- [x] **UI Refinements**:
+  - Removed Progress Summary card from Performance Analysis section for cleaner layout
+  - Moved Statistics card below Progress Comparison chart in All Time view
+  - Changed filter chips to show empty chart instead of message when none selected
+  - Added "Clear All" / "Select All" toggle button (4th button in 2nd row)
+  - Updated response time precision from 1 to 2 decimal places (calculation, display, export)
+- [x] **X-Axis Improvements**:
+  - Current Game view: X-axis shows actual question number from game session
+  - All Time view: X-axis shows cumulative sequential attempt number per position
+  - Fixed bug where position-specific counters weren't maintained when multiple chips selected
+  - Each position now independently tracks its cumulative attempt number (1, 2, 3...)
+  - X-axis range dynamically adjusts based on max attempts across selected positions
 - [x] **Testing**:
   - Manual testing: Play game → verify times recorded → check CSV export → import in new install ✅
   - Manual testing: Switch to All Time view → verify Progress Comparison appears ✅
   - Manual testing: View History from Start Screen → verify Progress Comparison appears ✅
   - Manual testing: Toggle filter chips → verify both charts update simultaneously ✅
+  - Manual testing: X-axis numbering for single/multiple positions → verified independent counters ✅
+  - Manual testing: Statistics card appears in correct order below charts ✅
+  - Manual testing: Response time precision shows 2 decimal places ✅
 
 ### Benefits:
 - Identify which chords take longer to recall

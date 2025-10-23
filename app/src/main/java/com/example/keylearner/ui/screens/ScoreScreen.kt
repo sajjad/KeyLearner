@@ -720,6 +720,7 @@ fun ResponseTimeAnalysisSection(
                     key(selectedChordFilters) {
                         ResponseTimeScatterChartComposable(
                             responseTimeData = filteredData,
+                            viewMode = viewMode,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(8.dp)
@@ -1121,6 +1122,7 @@ fun LineChartComposable(
 @Composable
 fun ResponseTimeScatterChartComposable(
     responseTimeData: List<com.example.keylearner.data.model.ResponseTimePoint>,
+    viewMode: ViewMode,
     modifier: Modifier = Modifier
 ) {
     val isDarkTheme = isSystemInDarkTheme()
@@ -1197,13 +1199,29 @@ fun ResponseTimeScatterChartComposable(
             data class NoteGroup(val note: String, val isCorrect: Boolean)
             val groupedData = mutableMapOf<NoteGroup, MutableList<com.github.mikephil.charting.data.Entry>>()
 
+            // Track cumulative attempt counter per position for All Time mode
+            val positionCounters = mutableMapOf<Int, Int>()
+
             responseTimeData.forEachIndexed { index, point ->
                 // Extract root note from chord (e.g., "Em" -> "E", "F#" -> "F", "C" -> "C")
                 val rootNote = point.chord.note.replace("#", "").replace("♭", "").first().toString()
                 val group = NoteGroup(rootNote, point.isCorrect)
 
+                // X-axis value depends on view mode:
+                // - Current Game: Use actual question number from the game
+                // - All Time: Use cumulative sequential attempt number per position
+                val xValue = when (viewMode) {
+                    ViewMode.CURRENT_GAME -> (point.questionIndex + 1).toFloat()
+                    ViewMode.ALL_TIME -> {
+                        // Increment counter for this position and use it
+                        val currentCount = positionCounters.getOrDefault(point.position, 0) + 1
+                        positionCounters[point.position] = currentCount
+                        currentCount.toFloat()
+                    }
+                }
+
                 val entry = com.github.mikephil.charting.data.Entry(
-                    (index + 1).toFloat(),  // Renumbered question number (1-based)
+                    xValue,
                     point.responseTimeSeconds
                 )
 
@@ -1261,9 +1279,23 @@ fun ResponseTimeScatterChartComposable(
                 this.textColor = textColor
             }
 
-            // Set X-axis range based on filtered data
+            // Set X-axis range based on view mode
             chart.xAxis.axisMinimum = 0f
-            chart.xAxis.axisMaximum = (responseTimeData.size + 1).toFloat()
+            chart.xAxis.axisMaximum = when (viewMode) {
+                ViewMode.CURRENT_GAME -> {
+                    // For current game, find the max question index
+                    val maxQuestionIndex = responseTimeData.maxOfOrNull { it.questionIndex } ?: 0
+                    (maxQuestionIndex + 2).toFloat()  // +2 for padding (1 for 1-based, 1 for spacing)
+                }
+                ViewMode.ALL_TIME -> {
+                    // For all time, find the max cumulative attempt count across all positions
+                    val maxAttempts = responseTimeData
+                        .groupBy { it.position }
+                        .values
+                        .maxOfOrNull { it.size } ?: 0
+                    (maxAttempts + 1).toFloat()
+                }
+            }
 
             // Set Y-axis maximum to a reasonable value
             val maxTime = responseTimeData.maxOfOrNull { it.responseTimeSeconds } ?: 5f
