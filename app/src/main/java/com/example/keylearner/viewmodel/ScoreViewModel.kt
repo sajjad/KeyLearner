@@ -48,6 +48,16 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _exportImportStatus = MutableStateFlow<ExportImportStatus>(ExportImportStatus.Idle)
     val exportImportStatus: StateFlow<ExportImportStatus> = _exportImportStatus.asStateFlow()
 
+    // Response time tracking states
+    private val _responseTimeData = MutableStateFlow<List<ResponseTimePoint>>(emptyList())
+    val responseTimeData: StateFlow<List<ResponseTimePoint>> = _responseTimeData.asStateFlow()
+
+    private val _selectedChordFilters = MutableStateFlow<Set<Int>>((1..7).toSet())
+    val selectedChordFilters: StateFlow<Set<Int>> = _selectedChordFilters.asStateFlow()
+
+    private val _responseTimeStats = MutableStateFlow<ResponseTimeStats?>(null)
+    val responseTimeStats: StateFlow<ResponseTimeStats?> = _responseTimeStats.asStateFlow()
+
     /**
      * Initialize with current game scores
      */
@@ -103,6 +113,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     fun selectKey(keyName: String) {
         _selectedKey.value = keyName
         updateChartData(keyName)
+        loadResponseTimeData(keyName)
     }
 
     /**
@@ -249,6 +260,76 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     fun clearPositionSelection() {
         _selectedPositions.value = emptySet()
         _progressData.value = emptyMap()
+    }
+
+    /**
+     * Load response time data for the selected key
+     */
+    private fun loadResponseTimeData(keyName: String) {
+        viewModelScope.launch {
+            val data = when (_viewMode.value) {
+                ViewMode.CURRENT_GAME -> {
+                    _currentGameScores.value?.getResponseTimesForKey(keyName) ?: emptyList()
+                }
+                ViewMode.ALL_TIME -> {
+                    scoreRepository.getResponseTimesForKey(keyName)
+                }
+            }
+            _responseTimeData.value = data
+            updateResponseTimeStats()
+        }
+    }
+
+    /**
+     * Toggle a chord filter for response time chart
+     */
+    fun toggleChordFilter(position: Int) {
+        val current = _selectedChordFilters.value
+        _selectedChordFilters.value = if (position in current) {
+            current - position  // Remove if already selected
+            } else {
+            current + position  // Add if not selected
+        }
+        updateResponseTimeStats()
+    }
+
+    /**
+     * Get filtered response time data
+     */
+    fun getFilteredResponseTimeData(): List<ResponseTimePoint> {
+        return _responseTimeData.value.filter { it.position in _selectedChordFilters.value }
+    }
+
+    /**
+     * Update response time statistics based on filtered data
+     */
+    private fun updateResponseTimeStats() {
+        val filtered = getFilteredResponseTimeData()
+
+        if (filtered.isEmpty()) {
+            _responseTimeStats.value = null
+            return
+        }
+
+        val scores = _currentGameScores.value
+        if (scores == null) {
+            _responseTimeStats.value = null
+            return
+        }
+
+        val avgTime = scores.getAverageResponseTime(filtered)
+        val fastestTime = scores.getFastestResponseTime(filtered)
+        val slowestTime = scores.getSlowestResponseTime(filtered)
+        val avgCorrectTime = scores.getAverageCorrectResponseTime(filtered)
+        val avgIncorrectTime = scores.getAverageIncorrectResponseTime(filtered)
+
+        _responseTimeStats.value = ResponseTimeStats(
+            averageTime = avgTime,
+            fastestTime = fastestTime,
+            slowestTime = slowestTime,
+            averageCorrectTime = avgCorrectTime,
+            averageIncorrectTime = avgIncorrectTime
+        )
     }
 
     /**
@@ -457,3 +538,14 @@ sealed class ExportImportStatus {
     data object ImportSuccess : ExportImportStatus()
     data class Error(val message: String) : ExportImportStatus()
 }
+
+/**
+ * Response time statistics
+ */
+data class ResponseTimeStats(
+    val averageTime: Float,
+    val fastestTime: Float,
+    val slowestTime: Float,
+    val averageCorrectTime: Float,
+    val averageIncorrectTime: Float
+)

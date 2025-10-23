@@ -356,6 +356,17 @@ fun ScoreScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Response Time Analysis Section
+            if (selectedKey != null) {
+                ResponseTimeAnalysisSection(
+                    viewModel = viewModel,
+                    selectedKey = selectedKey!!,
+                    chartData = chartData
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             // Define position colors (used for progress chart and position selector)
             val positionColors = listOf(
                 CorrectGreen, Color(0xFF3498DB), Color(0xFF9B59B6),
@@ -549,6 +560,325 @@ fun StatItem(label: String, value: String, color: Color = Color.DarkGray) {
     }
 }
 
+/**
+ * Response Time Analysis Section
+ *
+ * Displays chord filter chips, scatter chart, and statistics
+ */
+@Composable
+fun ResponseTimeAnalysisSection(
+    viewModel: ScoreViewModel,
+    selectedKey: String,
+    chartData: List<ChartBarData>
+) {
+    val responseTimeData by viewModel.responseTimeData.collectAsState()
+    val selectedChordFilters by viewModel.selectedChordFilters.collectAsState()
+    val responseTimeStats by viewModel.responseTimeStats.collectAsState()
+
+    // Get filtered data for the chart - recalculate when dependencies change
+    val filteredData = remember(responseTimeData, selectedChordFilters) {
+        responseTimeData.filter { it.position in selectedChordFilters }
+    }
+
+    // Determine if minor key
+    val isMinor = selectedKey.endsWith("m")
+    val rootKey = if (isMinor) selectedKey.dropLast(1) else selectedKey
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Response Time Analysis",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            // Chord Filter Chips
+            Text(
+                text = "Filter by Position",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Define note colors (A-G)
+            val noteColors = mapOf(
+                "A" to Color(0xFF00AA00),  // Green
+                "B" to Color(0xFF0066CC),  // Blue
+                "C" to Color(0xFFCC0000),  // Red
+                "D" to Color(0xFFFFDD00),  // Yellow
+                "E" to Color(0xFF87CEEB),  // Sky Blue
+                "F" to Color(0xFF8B00FF),  // Violet
+                "G" to Color(0xFFFF8800)   // Orange
+            )
+
+            // Row 1: Positions 1-4
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (position in 1..4) {
+                    val chord = com.example.keylearner.data.MusicTheory.getChord(rootKey, isMinor, position)
+                    val label = "$position-${chord.displayName()}"
+                    val isSelected = position in selectedChordFilters
+                    // Extract root note and get its color
+                    val rootNote = chord.note.replace("#", "").replace("♭", "").first().toString()
+                    val lineColor = noteColors[rootNote] ?: Color.Gray
+
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.toggleChordFilter(position) },
+                        label = {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1
+                            )
+                        },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(
+                                        color = Color(0xFFEEEEEE),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = lineColor,
+                                            shape = androidx.compose.foundation.shape.CircleShape
+                                        )
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Teal600,
+                            selectedLabelColor = Color.White
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Row 2: Positions 5-7
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (position in 5..7) {
+                    val chord = com.example.keylearner.data.MusicTheory.getChord(rootKey, isMinor, position)
+                    val label = "$position-${chord.displayName()}"
+                    val isSelected = position in selectedChordFilters
+                    // Extract root note and get its color
+                    val rootNote = chord.note.replace("#", "").replace("♭", "").first().toString()
+                    val lineColor = noteColors[rootNote] ?: Color.Gray
+
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.toggleChordFilter(position) },
+                        label = {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1
+                            )
+                        },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(
+                                        color = Color(0xFFEEEEEE),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = lineColor,
+                                            shape = androidx.compose.foundation.shape.CircleShape
+                                        )
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Teal600,
+                            selectedLabelColor = Color.White
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected
+                        )
+                    )
+                }
+                // Add empty spacers for alignment (since row 2 only has 3 items)
+                Spacer(modifier = Modifier.weight(1f))
+            }
+
+            // Scatter Chart
+            if (filteredData.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    // Key on selected filters to force chart update when filters change
+                    key(selectedChordFilters) {
+                        ResponseTimeScatterChartComposable(
+                            responseTimeData = filteredData,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                        )
+                    }
+                }
+
+                // Statistics Card
+                responseTimeStats?.let { stats ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Statistics",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Average Time
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Average",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = String.format("%.1fs", stats.averageTime),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                // Fastest Time
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Fastest",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = String.format("%.1fs", stats.fastestTime),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = CorrectGreen
+                                    )
+                                }
+
+                                // Slowest Time
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Slowest",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = String.format("%.1fs", stats.slowestTime),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = WrongOrange
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Correct vs Incorrect Average Times
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Avg Correct",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = String.format("%.1fs", stats.averageCorrectTime),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = CorrectGreen
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Avg Incorrect",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = String.format("%.1fs", stats.averageIncorrectTime),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = WrongOrange
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (responseTimeData.isEmpty()) {
+                            "No response time data available"
+                        } else {
+                            "Select at least one position to view response times"
+                        },
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun BarChartComposable(
     data: List<com.example.keylearner.viewmodel.ChartBarData>,
@@ -649,6 +979,21 @@ fun PositionSelectorCard(
     chartData: List<ChartBarData>,
     positionColors: List<Color>
 ) {
+    // Define note colors (A-G)
+    val noteColors = mapOf(
+        "A" to Color(0xFF00AA00),  // Green
+        "B" to Color(0xFF0066CC),  // Blue
+        "C" to Color(0xFFCC0000),  // Red
+        "D" to Color(0xFFFFDD00),  // Yellow
+        "E" to Color(0xFF87CEEB),  // Sky Blue
+        "F" to Color(0xFF8B00FF),  // Violet
+        "G" to Color(0xFFFF8800)   // Orange
+    )
+
+    // Determine if minor key
+    val isMinor = selectedKey.endsWith("m")
+    val rootKey = if (isMinor) selectedKey.dropLast(1) else selectedKey
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -668,7 +1013,10 @@ fun PositionSelectorCard(
             ) {
                 for (position in 1..4) {
                     val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
-                    val lineColor = positionColors[position - 1]
+                    // Extract root note from chord label and get its color
+                    val chord = com.example.keylearner.data.MusicTheory.getChord(rootKey, isMinor, position)
+                    val rootNote = chord.note.replace("#", "").replace("♭", "").first().toString()
+                    val lineColor = noteColors[rootNote] ?: Color.Gray
                     FilterChip(
                         selected = position in selectedPositions,
                         onClick = { onPositionToggled(position) },
@@ -721,7 +1069,10 @@ fun PositionSelectorCard(
             ) {
                 for (position in 5..7) {
                     val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
-                    val lineColor = positionColors[position - 1]
+                    // Extract root note from chord label and get its color
+                    val chord = com.example.keylearner.data.MusicTheory.getChord(rootKey, isMinor, position)
+                    val rootNote = chord.note.replace("#", "").replace("♭", "").first().toString()
+                    val lineColor = noteColors[rootNote] ?: Color.Gray
                     FilterChip(
                         selected = position in selectedPositions,
                         onClick = { onPositionToggled(position) },
@@ -783,6 +1134,17 @@ fun LineChartComposable(
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) AndroidColor.WHITE else AndroidColor.BLACK
 
+    // Define note colors (A-G)
+    val noteColors = mapOf(
+        "A" to Color(0xFF00AA00),  // Green
+        "B" to Color(0xFF0066CC),  // Blue
+        "C" to Color(0xFFCC0000),  // Red
+        "D" to Color(0xFFFFDD00),  // Yellow
+        "E" to Color(0xFF87CEEB),  // Sky Blue
+        "F" to Color(0xFF8B00FF),  // Violet
+        "G" to Color(0xFFFF8800)   // Orange
+    )
+
     AndroidView(
         factory = { context ->
             com.github.mikephil.charting.charts.LineChart(context).apply {
@@ -835,8 +1197,11 @@ fun LineChartComposable(
                     )
                 }
 
-                val color = positionColors[position - 1]
                 val chordLabel = chartData.getOrNull(position - 1)?.label ?: "$position"
+                // Extract root note from chord label (e.g., "1-Em" -> "E")
+                val chordName = chordLabel.split("-").getOrNull(1) ?: ""
+                val rootNote = chordName.replace("#", "").replace("♭", "").replace("°", "").firstOrNull()?.toString() ?: ""
+                val color = noteColors[rootNote] ?: Color.Gray
 
                 val lineDataSet = com.github.mikephil.charting.data.LineDataSet(entries, chordLabel).apply {
                     this.color = color.toArgb()
@@ -973,4 +1338,167 @@ fun ProgressSummaryCard(
             }
         }
     }
+}
+
+/**
+ * Response Time Scatter Chart Composable
+ *
+ * Displays response times for each question as scatter points
+ * Color-coded: Green for correct answers, Orange for incorrect answers
+ */
+@Composable
+fun ResponseTimeScatterChartComposable(
+    responseTimeData: List<com.example.keylearner.data.model.ResponseTimePoint>,
+    modifier: Modifier = Modifier
+) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val textColor = if (isDarkTheme) AndroidColor.WHITE else AndroidColor.BLACK
+
+    AndroidView(
+        factory = { context ->
+            com.github.mikephil.charting.charts.ScatterChart(context).apply {
+                description.isEnabled = false
+                setDrawGridBackground(false)
+                setTouchEnabled(true)
+                setPinchZoom(true)
+                isDoubleTapToZoomEnabled = false
+
+                // X-axis configuration
+                xAxis.apply {
+                    position = XAxis.XAxisPosition.BOTTOM
+                    setDrawGridLines(true)
+                    granularity = 1f
+                    valueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            return value.toInt().toString()  // Question number: 1, 2, 3...
+                        }
+                    }
+                    this.textColor = textColor
+                }
+
+                // Y-axis configuration
+                axisLeft.apply {
+                    setDrawGridLines(true)
+                    axisMinimum = 0f
+                    granularity = 0.5f
+                    valueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            return String.format("%.1fs", value)
+                        }
+                    }
+                    this.textColor = textColor
+                }
+                axisRight.isEnabled = false
+
+                // Configure legend
+                legend.apply {
+                    isEnabled = true
+                    verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                    horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                    orientation = Legend.LegendOrientation.HORIZONTAL
+                    setDrawInside(false)
+                    xEntrySpace = 16f
+                    yEntrySpace = 0f
+                    this.textColor = textColor
+                }
+            }
+        },
+        update = { chart ->
+            if (responseTimeData.isEmpty()) {
+                chart.clear()
+                chart.invalidate()
+                return@AndroidView
+            }
+
+            // Define note colors (A-G)
+            val noteColors = mapOf(
+                "A" to AndroidColor.parseColor("#00AA00"),  // Green
+                "B" to AndroidColor.parseColor("#0066CC"),  // Blue
+                "C" to AndroidColor.parseColor("#CC0000"),  // Red
+                "D" to AndroidColor.parseColor("#FFDD00"),  // Yellow
+                "E" to AndroidColor.parseColor("#87CEEB"),  // Sky Blue
+                "F" to AndroidColor.parseColor("#8B00FF"),  // Violet
+                "G" to AndroidColor.parseColor("#FF8800")   // Orange
+            )
+
+            // Group data by note name and correctness
+            data class NoteGroup(val note: String, val isCorrect: Boolean)
+            val groupedData = mutableMapOf<NoteGroup, MutableList<com.github.mikephil.charting.data.Entry>>()
+
+            responseTimeData.forEachIndexed { index, point ->
+                // Extract root note from chord (e.g., "Em" -> "E", "F#" -> "F", "C" -> "C")
+                val rootNote = point.chord.note.replace("#", "").replace("♭", "").first().toString()
+                val group = NoteGroup(rootNote, point.isCorrect)
+
+                val entry = com.github.mikephil.charting.data.Entry(
+                    (index + 1).toFloat(),  // Renumbered question number (1-based)
+                    point.responseTimeSeconds
+                )
+
+                groupedData.getOrPut(group) { mutableListOf() }.add(entry)
+            }
+
+            val dataSets = mutableListOf<com.github.mikephil.charting.interfaces.datasets.IScatterDataSet>()
+
+            // Create datasets for each note/correctness combination
+            groupedData.forEach { (group, entries) ->
+                val noteColor = noteColors[group.note] ?: AndroidColor.GRAY
+                val label = "${group.note}${if (group.isCorrect) "" else " (wrong)"}"
+
+                val dataSet = com.github.mikephil.charting.data.ScatterDataSet(entries, label).apply {
+                    color = noteColor
+                    // Filled circle for correct, hollow circle for incorrect
+                    setScatterShape(
+                        if (group.isCorrect) {
+                            com.github.mikephil.charting.charts.ScatterChart.ScatterShape.CIRCLE
+                        } else {
+                            com.github.mikephil.charting.charts.ScatterChart.ScatterShape.CIRCLE
+                        }
+                    )
+                    scatterShapeSize = 14f
+
+                    // For incorrect answers, make them hollow by using a different drawing mode
+                    if (!group.isCorrect) {
+                        scatterShapeHoleRadius = 6f  // Makes it hollow
+                        scatterShapeHoleColor = if (isDarkTheme) AndroidColor.parseColor("#1E1E1E") else AndroidColor.WHITE
+                    }
+
+                    setDrawValues(false)  // Disable value labels
+                }
+                dataSets.add(dataSet)
+            }
+
+            val scatterData = com.github.mikephil.charting.data.ScatterData(dataSets)
+            chart.data = scatterData
+
+            // Update axis colors
+            chart.xAxis.textColor = textColor
+            chart.axisLeft.textColor = textColor
+            chart.legend.textColor = textColor
+
+            // Update legend
+            chart.legend.apply {
+                isEnabled = true
+                verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                orientation = Legend.LegendOrientation.HORIZONTAL
+                setDrawInside(false)
+                xEntrySpace = 12f
+                yEntrySpace = 4f
+                formSize = 10f
+                this.textColor = textColor
+            }
+
+            // Set X-axis range based on filtered data
+            chart.xAxis.axisMinimum = 0f
+            chart.xAxis.axisMaximum = (responseTimeData.size + 1).toFloat()
+
+            // Set Y-axis maximum to a reasonable value
+            val maxTime = responseTimeData.maxOfOrNull { it.responseTimeSeconds } ?: 5f
+            chart.axisLeft.axisMaximum = maxTime + 1f
+
+            chart.invalidate()
+        },
+        modifier = modifier
+    )
 }

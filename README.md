@@ -55,42 +55,35 @@ When someone says "Let's play a 1-4-5 progression in Em" or "Let's jam in the ke
 ### Game Screen - Limited Mode
 *Quick practice: Select the correct chord from 7 shuffled options.*
 
-<a href="imgs/game_limited.png"><img src="imgs/game_limited.png" alt="Start Screen" height="300"></a>
+<a href="imgs/game_limited.png"><img src="imgs/game_limited.png" alt="Game Screen" height="300"></a>
 
 ---
 
 ### Game Screen - Full Mode
 *Advanced practice: Build the chord by selecting note, quality, and accidental.*
 
-<a href="imgs/game_full.png"><img src="imgs/game_full.png" alt="Start Screen" height="300"></a>
+<a href="imgs/game_full.png"><img src="imgs/game_full.png" alt="Game Screen" height="300"></a>
 
 ---
 
 ### Score Screen - Current Game
 *Review your performance with detailed statistics and position-by-position breakdown.*
 
-<a href="imgs/score_current.png"><img src="imgs/score_current.png" alt="Start Screen" height="300"></a>
-
----
-
-### Score Screen - Game Result
-*See the score of a game*
-
-<a href="imgs/score_game.png"><img src="imgs/score_game.png" alt="Start Screen" height="300"></a>
+<a href="imgs/score_game.png"><img src="imgs/score_game.png" alt="Score Screen - Game" height="300"></a>
 
 ---
 
 ### Score Screen - All Time Statistics
 *Track your progress over time with cumulative stats and historical data.*
 
-<a href="imgs/score_all_time.png"><img src="imgs/score_all_time.png" alt="Start Screen" height="300"></a>
+<a href="imgs/score_all_time.png"><img src="imgs/score_all_time.png" alt="Score Screen - History" height="300"></a>
 
 ---
 
 ### Progress Tracking
 *Multi-line charts showing accuracy trends for multiple chord positions over time.*
 
-<a href="imgs/progress_tracking.png"><img src="imgs/progress_tracking.png" alt="Start Screen" height="300"></a>
+<a href="imgs/progress_tracking.png"><img src="imgs/progress_tracking.png" alt="Score Screen - Tracking" height="300"></a>
 
 ---
 

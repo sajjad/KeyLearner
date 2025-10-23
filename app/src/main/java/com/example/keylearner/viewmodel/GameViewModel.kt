@@ -26,9 +26,12 @@ class GameViewModel : ViewModel() {
     val selectedAnswer: StateFlow<SelectedAnswer> = _selectedAnswer.asStateFlow()
 
     private val _scores = MutableStateFlow<MutableMap<String, MutableMap<Int, PositionScore>>>(mutableMapOf())
+    private val _responseTimes = MutableStateFlow<MutableList<ResponseTimePoint>>(mutableListOf())
 
     private var timerJob: Job? = null
     private var currentSettings: Settings? = null
+    private var questionStartTime: Long = 0L
+    private var totalQuestionsCount: Int = 0
 
     /**
      * Initialize the game with settings
@@ -38,6 +41,11 @@ class GameViewModel : ViewModel() {
         val allKeys = settings.getAllSelectedKeys()
 
         if (allKeys.isEmpty()) return
+
+        // Reset counters
+        totalQuestionsCount = 0
+        _scores.value = mutableMapOf()
+        _responseTimes.value = mutableListOf()
 
         val firstKey = allKeys[0]
         val shuffledChords = if (settings.limitChoices) {
@@ -57,6 +65,8 @@ class GameViewModel : ViewModel() {
             shuffledChords = shuffledChords
         )
 
+        // Start timing for the first question
+        questionStartTime = System.currentTimeMillis()
         startTimer()
     }
 
@@ -90,6 +100,11 @@ class GameViewModel : ViewModel() {
      * Handle timer expiry - mark as incorrect and advance to next question
      */
     private fun handleTimerExpiry(current: GameState, settings: Settings) {
+        // Record response time (full delay time since timer expired)
+        val responseTime = settings.delay
+        val chord = MusicTheory.getChord(current.currentKey, current.isMinor, current.currentPosition)
+        recordResponseTime(current.getCurrentKeyDisplay(), current.currentPosition, chord, false, responseTime)
+
         // Mark as incorrect answer
         updateScore(current.getCurrentKeyDisplay(), current.currentPosition, false)
 
@@ -112,6 +127,10 @@ class GameViewModel : ViewModel() {
         val current = _gameState.value ?: return GameResult.Continue
         val settings = currentSettings ?: return GameResult.Continue
 
+        // Calculate response time
+        val responseTimeMs = System.currentTimeMillis() - questionStartTime
+        val responseTimeSeconds = (responseTimeMs / 100.0f).toInt() / 10.0f // Round to 1 decimal place
+
         val correctChord = MusicTheory.getChord(
             current.currentKey,
             current.isMinor,
@@ -119,6 +138,9 @@ class GameViewModel : ViewModel() {
         )
 
         val isCorrect = MusicTheory.areEnharmonicallyEquivalent(answer, correctChord)
+
+        // Record response time
+        recordResponseTime(current.getCurrentKeyDisplay(), current.currentPosition, correctChord, isCorrect, responseTimeSeconds)
 
         // Update scores
         updateScore(current.getCurrentKeyDisplay(), current.currentPosition, isCorrect)
@@ -154,6 +176,9 @@ class GameViewModel : ViewModel() {
         )
 
         _selectedAnswer.value = SelectedAnswer()
+
+        // Reset timer for next question
+        questionStartTime = System.currentTimeMillis()
     }
 
     /**
@@ -189,7 +214,34 @@ class GameViewModel : ViewModel() {
         )
 
         _selectedAnswer.value = SelectedAnswer()
+
+        // Reset timer for first question in next key
+        questionStartTime = System.currentTimeMillis()
+
         return GameResult.Continue
+    }
+
+    /**
+     * Record response time for a question
+     */
+    private fun recordResponseTime(
+        keyName: String,
+        position: Int,
+        chord: Chord,
+        isCorrect: Boolean,
+        responseTimeSeconds: Float
+    ) {
+        val responseTimePoint = ResponseTimePoint(
+            questionIndex = totalQuestionsCount,
+            keyName = keyName,
+            position = position,
+            chord = chord,
+            isCorrect = isCorrect,
+            responseTimeSeconds = responseTimeSeconds
+        )
+
+        _responseTimes.value.add(responseTimePoint)
+        totalQuestionsCount++
     }
 
     /**
@@ -215,7 +267,7 @@ class GameViewModel : ViewModel() {
             keyName to KeyScore(keyName, positionScores.toMap())
         }.toMap()
 
-        return GameScores(keyScores)
+        return GameScores(keyScores, _responseTimes.value.toList())
     }
 
     // Methods for full-choice mode

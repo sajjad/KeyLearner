@@ -379,6 +379,84 @@ com.example.keylearner/
 
 ---
 
+## Phase 13: Response Time Tracking and Visualisation
+**Status:** 🚧 In Progress
+
+### Tasks:
+- [x] **Data Model Updates**:
+  - Create `ResponseTimePoint` data class (questionIndex, chord, position, isCorrect, timeSeconds)
+  - Update `GameScores` to include `List<ResponseTimePoint>`
+  - Ensure backward compatibility with existing score data
+- [x] **Game Logic (GameViewModel)**:
+  - Track `questionStartTime` when displaying new position
+  - Calculate elapsed time on answer submission (currentTime - questionStartTime)
+  - Store `ResponseTimePoint` with each answer
+  - Handle edge cases (instant mode with 0 delay, timer expiry without answer)
+- [x] **Repository Updates (ScoreRepository)**:
+  - Persist response time data in DataStore (update JSON structure)
+  - Update `exportToCSV()` to include `TimeSeconds` column
+  - Update `importFromCSV()` to parse time data (backward compatible with old format)
+  - Add `getResponseTimesForKey(keyName)` method for historical data
+  - Add aggregate methods for All Time view
+- [x] **ScoreViewModel Extensions**:
+  - Add response time chart state (`selectedChordFilters: Set<Int>`, `filteredResponseTimes`)
+  - Implement `toggleChordFilter(position: Int)` for multi-select filtering
+  - Calculate aggregate statistics:
+    - Average response time (all, filtered)
+    - Min/max response times
+    - Average time for correct vs incorrect answers
+  - Load response time data for Current Game and All Time views
+  - Filter data based on selected chord positions
+- [x] **Chart Component (ResponseTimeChartComposable)**:
+  - Create wrapper for MPAndroidChart ScatterChart
+  - X-axis: Question number (1, 2, 3... dynamic based on filters)
+  - Y-axis: Time in seconds with 1 decimal place (0.0 - max+1)
+  - Color-coded by note (A-G) using consistent color scheme
+  - Filled circles for correct, hollow circles for incorrect
+  - Smooth zoom/pan interactions
+- [x] **Consistent Color Scheme Across All Charts**:
+  - Use note-based colors (A=Green, B=Blue, C=Red, D=Yellow, E=Sky Blue, F=Violet, G=Orange)
+  - Apply to Response Time Analysis filter chips
+  - Apply to Select Position to View Progress filter chips
+  - Apply to Progress Comparison line chart
+  - Apply to Response Time scatter chart points
+- [x] **UI Components**:
+  - Chord filter chips row (similar to "Select Position to View Progress")
+    - 7 FilterChip buttons with chord labels (e.g., "1-Em", "2-F#°")
+    - Multi-select enabled, all selected by default
+    - Update chart when chips toggled
+    - Colored indicators matching note colors
+  - Statistics card showing:
+    - Average response time
+    - Fastest/Slowest times
+    - Avg time for correct vs incorrect
+    - Formatted to 1 decimal place
+  - Section title: "Response Time Analysis"
+- [x] **ScoreScreen Integration**:
+  - Add response time section below existing bar chart
+  - Show in both "Current Game" and "All Time" modes
+  - Reactive filtering with `remember()` and `key()`
+  - Clean layout with proper spacing
+- [x] **CSV Format Update**:
+  - New format: `Timestamp,Key,Position,Correct,Wrong,TimeSeconds`
+  - Example: `2025-10-23T14:30:00Z,Em,1,5,2,2.3;1.8;3.4;2.1;1.9;2.7;2.5`
+  - Time data as semicolon-separated list (one per question)
+  - Backward compatible: missing TimeSeconds column defaults to empty list
+- [ ] **Testing**:
+  - Unit tests for time tracking logic (`ResponseTimeTrackingTest.kt`)
+  - Unit tests for filtering and aggregation (`ResponseTimeStatsTest.kt`)
+  - Update CSV import/export tests to include time data
+  - Edge case tests: 0 delay mode, very long times (>60s), empty filters
+  - Manual testing: Play game → verify times recorded → check CSV export → import in new install
+
+### Benefits:
+- Identify which chords take longer to recall
+- Track improvement in response speed over time
+- Discover if slower responses correlate with errors
+- Gamification: challenge yourself to improve speed while maintaining accuracy
+
+---
+
 ## Status Legend:
 - ⏳ **Pending** - Not started
 - 🚧 **In Progress** - Currently working on

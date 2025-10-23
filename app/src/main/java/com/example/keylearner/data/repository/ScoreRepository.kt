@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.keylearner.data.MusicTheory
 import com.example.keylearner.data.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -172,18 +173,18 @@ class ScoreRepository(private val context: Context) {
     /**
      * Export all game sessions to CSV format
      *
-     * @return CSV string with format: Timestamp,Key,Position,Correct,Wrong
+     * @return CSV string with format: Timestamp,Key,Position,Correct,Wrong,TimeSeconds
      */
     suspend fun exportToCSV(): String {
         val sessionsJson = context.scoreDataStore.data.map { it[GAME_SESSIONS] ?: "[]" }
         val sessions = parseGameSessions(sessionsJson.first())
 
         if (sessions.isEmpty()) {
-            return "Timestamp,Key,Position,Correct,Wrong\n"
+            return "Timestamp,Key,Position,Correct,Wrong,TimeSeconds\n"
         }
 
         val csv = StringBuilder()
-        csv.append("Timestamp,Key,Position,Correct,Wrong\n")
+        csv.append("Timestamp,Key,Position,Correct,Wrong,TimeSeconds\n")
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.UK)
         dateFormat.timeZone = TimeZone.getTimeZone("UTC")
@@ -193,7 +194,13 @@ class ScoreRepository(private val context: Context) {
 
             session.scores.keyScores.forEach { (keyName, keyScore) ->
                 keyScore.positionScores.forEach { (position, positionScore) ->
-                    csv.append("$timestampStr,$keyName,$position,${positionScore.correct},${positionScore.wrong}\n")
+                    // Get response times for this key and position in this session
+                    val responseTimes = session.scores.responseTimes
+                        .filter { it.keyName == keyName && it.position == position }
+                        .map { String.format(Locale.UK, "%.1f", it.responseTimeSeconds) }
+                        .joinToString(";")
+
+                    csv.append("$timestampStr,$keyName,$position,${positionScore.correct},${positionScore.wrong},$responseTimes\n")
                 }
             }
         }
@@ -216,9 +223,12 @@ class ScoreRepository(private val context: Context) {
                 return Result.failure(Exception("CSV file is empty"))
             }
 
-            // Validate header
+            // Validate header (support both old and new formats)
             val header = lines[0].trim()
-            if (header != "Timestamp,Key,Position,Correct,Wrong") {
+            val hasTimeColumn = header == "Timestamp,Key,Position,Correct,Wrong,TimeSeconds"
+            val isOldFormat = header == "Timestamp,Key,Position,Correct,Wrong"
+
+            if (!hasTimeColumn && !isOldFormat) {
                 return Result.failure(Exception("Invalid CSV format - incorrect header"))
             }
 
@@ -232,14 +242,17 @@ class ScoreRepository(private val context: Context) {
 
             // Group by timestamp to reconstruct GameSessions
             val sessionMap = mutableMapOf<Long, MutableMap<String, MutableMap<Int, PositionScore>>>()
+            val responseTimeMap = mutableMapOf<Long, MutableList<ResponseTimePoint>>()
 
             lines.drop(1).forEachIndexed { index, line ->
                 val trimmedLine = line.trim()
                 if (trimmedLine.isEmpty()) return@forEachIndexed
 
                 val parts = trimmedLine.split(",")
-                if (parts.size != 5) {
-                    return Result.failure(Exception("Invalid CSV format at line ${index + 2} - expected 5 columns, found ${parts.size}"))
+                val expectedColumns = if (hasTimeColumn) 6 else 5
+
+                if (parts.size != expectedColumns) {
+                    return Result.failure(Exception("Invalid CSV format at line ${index + 2} - expected $expectedColumns columns, found ${parts.size}"))
                 }
 
                 try {
@@ -266,6 +279,40 @@ class ScoreRepository(private val context: Context) {
                     val posMap = keyMap.getOrPut(keyName) { mutableMapOf() }
                     posMap[position] = PositionScore(correct, wrong)
 
+                    // Parse response times if present
+                    if (hasTimeColumn && parts.size == 6) {
+                        val timeSecondsStr = parts[5].trim()
+                        if (timeSecondsStr.isNotEmpty()) {
+                            val times = timeSecondsStr.split(";")
+                            val responseTimeList = responseTimeMap.getOrPut(timestamp) { mutableListOf() }
+
+                            // Get the chord for this position
+                            val isMinor = keyName.endsWith("m")
+                            val rootKey = if (isMinor) keyName.dropLast(1) else keyName
+                            val chord = MusicTheory.getChord(rootKey, isMinor, position)
+
+                            times.forEachIndexed { timeIndex, timeStr ->
+                                val timeSeconds = timeStr.toFloatOrNull()
+                                    ?: return Result.failure(Exception("Invalid time value at line ${index + 2}"))
+
+                                // Determine if this was correct based on the counts
+                                // We don't have perfect information, so we'll mark first 'correct' count as correct
+                                val isCorrect = timeIndex < correct
+
+                                responseTimeList.add(
+                                    ResponseTimePoint(
+                                        questionIndex = responseTimeList.size,
+                                        keyName = keyName,
+                                        position = position,
+                                        chord = chord,
+                                        isCorrect = isCorrect,
+                                        responseTimeSeconds = timeSeconds
+                                    )
+                                )
+                            }
+                        }
+                    }
+
                 } catch (e: Exception) {
                     return Result.failure(Exception("Error parsing line ${index + 2}: ${e.message}"))
                 }
@@ -276,7 +323,8 @@ class ScoreRepository(private val context: Context) {
                 val keyScores = keyMap.map { (keyName, posMap) ->
                     keyName to KeyScore(keyName, posMap)
                 }.toMap()
-                GameSession(timestamp, GameScores(keyScores))
+                val responseTimes = responseTimeMap[timestamp] ?: emptyList()
+                GameSession(timestamp, GameScores(keyScores, responseTimes))
             }
 
             // Merge with existing sessions
@@ -304,6 +352,26 @@ class ScoreRepository(private val context: Context) {
         } catch (e: Exception) {
             Result.failure(Exception("Import failed: ${e.message}"))
         }
+    }
+
+    /**
+     * Get all response times for a specific key across all sessions
+     */
+    suspend fun getResponseTimesForKey(keyName: String): List<ResponseTimePoint> {
+        val sessionsJson = context.scoreDataStore.data.map { it[GAME_SESSIONS] ?: "[]" }
+        val sessions = parseGameSessions(sessionsJson.first())
+
+        return sessions.flatMap { session ->
+            session.scores.responseTimes.filter { it.keyName == keyName }
+        }
+    }
+
+    /**
+     * Get cumulative response times aggregated by position for a specific key
+     */
+    suspend fun getAggregatedResponseTimesForKey(keyName: String): Map<Int, List<ResponseTimePoint>> {
+        val allResponseTimes = getResponseTimesForKey(keyName)
+        return allResponseTimes.groupBy { it.position }
     }
 
     /**
@@ -340,6 +408,28 @@ class ScoreRepository(private val context: Context) {
             }
             scoresObj.put(keyName, keyScoreObj)
         }
+
+        // Serialize response times
+        val responseTimesArray = JSONArray()
+        scores.responseTimes.forEach { responseTime ->
+            val rtObj = JSONObject()
+            rtObj.put("questionIndex", responseTime.questionIndex)
+            rtObj.put("keyName", responseTime.keyName)
+            rtObj.put("position", responseTime.position)
+
+            // Serialize chord
+            val chordObj = JSONObject()
+            chordObj.put("note", responseTime.chord.note)
+            chordObj.put("quality", responseTime.chord.quality)
+            rtObj.put("chord", chordObj)
+
+            rtObj.put("isCorrect", responseTime.isCorrect)
+            rtObj.put("responseTimeSeconds", responseTime.responseTimeSeconds.toDouble())
+
+            responseTimesArray.put(rtObj)
+        }
+
+        scoresObj.put("responseTimes", responseTimesArray)
         return scoresObj
     }
 
@@ -362,6 +452,8 @@ class ScoreRepository(private val context: Context) {
         val keyScores = mutableMapOf<String, KeyScore>()
 
         scoresObj.keys().forEach { keyName ->
+            if (keyName == "responseTimes") return@forEach // Skip response times in this loop
+
             val keyScoreObj = scoresObj.getJSONObject(keyName)
             val positionScores = mutableMapOf<Int, PositionScore>()
 
@@ -377,7 +469,34 @@ class ScoreRepository(private val context: Context) {
             keyScores[keyName] = KeyScore(keyName, positionScores)
         }
 
-        return GameScores(keyScores)
+        // Parse response times (backward compatible - may not exist in old data)
+        val responseTimes = mutableListOf<ResponseTimePoint>()
+        if (scoresObj.has("responseTimes")) {
+            val responseTimesArray = scoresObj.getJSONArray("responseTimes")
+            for (i in 0 until responseTimesArray.length()) {
+                val rtObj = responseTimesArray.getJSONObject(i)
+
+                // Parse chord
+                val chordObj = rtObj.getJSONObject("chord")
+                val chord = Chord(
+                    note = chordObj.getString("note"),
+                    quality = chordObj.getString("quality")
+                )
+
+                responseTimes.add(
+                    ResponseTimePoint(
+                        questionIndex = rtObj.getInt("questionIndex"),
+                        keyName = rtObj.getString("keyName"),
+                        position = rtObj.getInt("position"),
+                        chord = chord,
+                        isCorrect = rtObj.getBoolean("isCorrect"),
+                        responseTimeSeconds = rtObj.getDouble("responseTimeSeconds").toFloat()
+                    )
+                )
+            }
+        }
+
+        return GameScores(keyScores, responseTimes)
     }
 }
 
