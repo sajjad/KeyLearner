@@ -35,18 +35,29 @@ class ScoreRepository(private val context: Context) {
             val sessionsJson = preferences[GAME_SESSIONS] ?: "[]"
             val sessions = parseGameSessions(sessionsJson).toMutableList()
 
-            // Add new session
-            sessions.add(GameSession(System.currentTimeMillis(), scores))
-
-            // Keep only the most recent sessions
-            val trimmedSessions = if (sessions.size > MAX_SESSIONS) {
-                sessions.sortedByDescending { it.timestamp }.take(MAX_SESSIONS)
-            } else {
-                sessions
+            // Check if this exact GameScores already exists in recent sessions
+            // Compare by checking if response times list is identical (most unique identifier)
+            val isDuplicate = sessions.any { existingSession ->
+                existingSession.scores.responseTimes.size == scores.responseTimes.size &&
+                existingSession.scores.responseTimes == scores.responseTimes &&
+                existingSession.scores.keyScores == scores.keyScores
             }
 
-            // Save back as JSON
-            preferences[GAME_SESSIONS] = serializeGameSessions(trimmedSessions)
+            // Only add if not a duplicate
+            if (!isDuplicate) {
+                // Add new session
+                sessions.add(GameSession(System.currentTimeMillis(), scores))
+
+                // Keep only the most recent sessions
+                val trimmedSessions = if (sessions.size > MAX_SESSIONS) {
+                    sessions.sortedByDescending { it.timestamp }.take(MAX_SESSIONS)
+                } else {
+                    sessions
+                }
+
+                // Save back as JSON
+                preferences[GAME_SESSIONS] = serializeGameSessions(trimmedSessions)
+            }
         }
     }
 
@@ -197,7 +208,7 @@ class ScoreRepository(private val context: Context) {
                     // Get response times for this key and position in this session
                     val responseTimes = session.scores.responseTimes
                         .filter { it.keyName == keyName && it.position == position }
-                        .map { String.format(Locale.UK, "%.1f", it.responseTimeSeconds) }
+                        .map { String.format(Locale.UK, "%.2f", it.responseTimeSeconds) }
                         .joinToString(";")
 
                     csv.append("$timestampStr,$keyName,$position,${positionScore.correct},${positionScore.wrong},$responseTimes\n")

@@ -27,6 +27,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentGameScores = MutableStateFlow<GameScores?>(null)
     val currentGameScores: StateFlow<GameScores?> = _currentGameScores.asStateFlow()
 
+    // Track if the current game session has been saved to prevent duplicates
+    private var currentSessionSaved = false
+
     private val _viewMode = MutableStateFlow(ViewMode.CURRENT_GAME)
     val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
 
@@ -59,12 +62,23 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
      * Initialize with current game scores
      */
     fun setCurrentGameScores(scores: GameScores) {
+        // Check if this is a new game session or the same one
+        val isNewSession = _currentGameScores.value != scores
+
+        // If it's a new session, reset the saved flag
+        if (isNewSession) {
+            currentSessionSaved = false
+        }
+
         _currentGameScores.value = scores
 
-        // Save to history
-        viewModelScope.launch {
-            scoreRepository.saveGameSession(scores)
-            loadCumulativeStats()
+        // Save to history only once per session
+        if (!currentSessionSaved) {
+            currentSessionSaved = true
+            viewModelScope.launch {
+                scoreRepository.saveGameSession(scores)
+                loadCumulativeStats()
+            }
         }
 
         // Auto-select first key
