@@ -51,8 +51,6 @@ fun ScoreScreen(
     currentGameScores: GameScores?,
     onReplay: () -> Unit,
     onBackToStart: () -> Unit,
-    onExport: () -> Unit,
-    onImport: () -> Unit,
     viewModel: ScoreViewModel = viewModel()
 ) {
     val viewMode by viewModel.viewMode.collectAsState()
@@ -155,7 +153,7 @@ fun ScoreScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (currentGameScores != null) "Game Results" else "Historical Statistics",
+                    text = if (viewMode == ViewMode.CURRENT_GAME) "Game Results" else "Historical Statistics",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 32.sp
@@ -164,36 +162,6 @@ fun ScoreScreen(
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
-
-                // Export Button (Download)
-                IconButton(
-                    onClick = onExport,
-                    modifier = Modifier
-                        .size(40.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_export),
-                        contentDescription = "Export scores to CSV",
-                        tint = Teal600,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Import Button (Upload)
-                IconButton(
-                    onClick = onImport,
-                    modifier = Modifier
-                        .size(40.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_import),
-                        contentDescription = "Import scores from CSV",
-                        tint = Teal600,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
 
                 // View Mode Toggle Button (only shown if there's a current game)
                 if (currentGameScores != null) {
@@ -1229,6 +1197,7 @@ fun ResponseTimeScatterChartComposable(
             }
 
             val dataSets = mutableListOf<com.github.mikephil.charting.interfaces.datasets.IScatterDataSet>()
+            val wrongAnswerEntries = mutableListOf<com.github.mikephil.charting.data.Entry>()
 
             // Create datasets for each note/correctness combination
             groupedData.forEach { (group, entries) ->
@@ -1237,25 +1206,27 @@ fun ResponseTimeScatterChartComposable(
 
                 val dataSet = com.github.mikephil.charting.data.ScatterDataSet(entries, label).apply {
                     color = noteColor
-                    // Filled circle for correct, hollow circle for incorrect
-                    setScatterShape(
-                        if (group.isCorrect) {
-                            com.github.mikephil.charting.charts.ScatterChart.ScatterShape.CIRCLE
-                        } else {
-                            com.github.mikephil.charting.charts.ScatterChart.ScatterShape.CIRCLE
-                        }
-                    )
+                    setScatterShape(com.github.mikephil.charting.charts.ScatterChart.ScatterShape.CIRCLE)
                     scatterShapeSize = 14f
-
-                    // For incorrect answers, make them hollow by using a different drawing mode
-                    if (!group.isCorrect) {
-                        scatterShapeHoleRadius = 6f  // Makes it hollow
-                        scatterShapeHoleColor = if (isDarkTheme) AndroidColor.parseColor("#1E1E1E") else AndroidColor.WHITE
-                    }
-
                     setDrawValues(false)  // Disable value labels
                 }
                 dataSets.add(dataSet)
+
+                // Collect wrong answer entries for the black center overlay
+                if (!group.isCorrect) {
+                    wrongAnswerEntries.addAll(entries)
+                }
+            }
+
+            // Add a dataset for black centers on wrong answers
+            if (wrongAnswerEntries.isNotEmpty()) {
+                val blackCenterDataSet = com.github.mikephil.charting.data.ScatterDataSet(wrongAnswerEntries, "").apply {
+                    color = AndroidColor.BLACK
+                    setScatterShape(com.github.mikephil.charting.charts.ScatterChart.ScatterShape.CIRCLE)
+                    scatterShapeSize = 7f  // Smaller black circle
+                    setDrawValues(false)
+                }
+                dataSets.add(blackCenterDataSet)
             }
 
             val scatterData = com.github.mikephil.charting.data.ScatterData(dataSets)

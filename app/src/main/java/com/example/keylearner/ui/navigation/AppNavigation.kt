@@ -99,6 +99,32 @@ fun AppNavigation(
                 fadeOut(animationSpec = tween(300))
             }
         ) {
+            val scoreViewModel: ScoreViewModel = viewModel()
+            val coroutineScope = rememberCoroutineScope()
+
+            // Export CSV launcher (create new file)
+            val exportLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.CreateDocument("text/csv")
+            ) { uri ->
+                uri?.let {
+                    coroutineScope.launch {
+                        val csvContent = scoreViewModel.generateCSVContent()
+                        if (csvContent != null) {
+                            scoreViewModel.writeCSVToFile(it, csvContent)
+                        }
+                    }
+                }
+            }
+
+            // Import CSV launcher (open existing file)
+            val importLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocument()
+            ) { uri ->
+                uri?.let {
+                    scoreViewModel.importCSVFromFile(it)
+                }
+            }
+
             StartScreen(
                 onStartGame = {
                     navController.navigate(Screen.Game.route)
@@ -107,6 +133,16 @@ fun AppNavigation(
                     // Navigate to Score screen without current game scores (will show All Time view)
                     currentGameScores = null
                     navController.navigate(Screen.Score.route)
+                },
+                onExport = {
+                    // Generate filename with timestamp
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.UK)
+                    val timestamp = dateFormat.format(Date())
+                    val filename = "keylearner_scores_$timestamp.csv"
+                    exportLauncher.launch(filename)
+                },
+                onImport = {
+                    importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv"))
                 }
             )
         }
@@ -177,32 +213,6 @@ fun AppNavigation(
                 )
             }
         ) {
-            val scoreViewModel: ScoreViewModel = viewModel()
-            val coroutineScope = rememberCoroutineScope()
-
-            // Export CSV launcher (create new file)
-            val exportLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument("text/csv")
-            ) { uri ->
-                uri?.let {
-                    coroutineScope.launch {
-                        val csvContent = scoreViewModel.generateCSVContent()
-                        if (csvContent != null) {
-                            scoreViewModel.writeCSVToFile(it, csvContent)
-                        }
-                    }
-                }
-            }
-
-            // Import CSV launcher (open existing file)
-            val importLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.OpenDocument()
-            ) { uri ->
-                uri?.let {
-                    scoreViewModel.importCSVFromFile(it)
-                }
-            }
-
             ScoreScreen(
                 currentGameScores = currentGameScores,
                 onReplay = {
@@ -212,18 +222,7 @@ fun AppNavigation(
                 },
                 onBackToStart = {
                     navController.popBackStack(Screen.Start.route, inclusive = false)
-                },
-                onExport = {
-                    // Generate filename with timestamp
-                    val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.UK)
-                    val timestamp = dateFormat.format(Date())
-                    val filename = "keylearner_scores_$timestamp.csv"
-                    exportLauncher.launch(filename)
-                },
-                onImport = {
-                    importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv"))
-                },
-                viewModel = scoreViewModel
+                }
             )
         }
     }

@@ -47,6 +47,8 @@ import com.example.keylearner.viewmodel.StartScreenViewModel
 fun StartScreen(
     onStartGame: () -> Unit,
     onViewHistory: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
     viewModel: StartScreenViewModel = viewModel()
 ) {
     val settings by viewModel.settings.collectAsState()
@@ -194,6 +196,48 @@ fun StartScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Import/Export Buttons Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Export Data Button
+                OutlinedButton(
+                    onClick = onExport,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Teal600
+                    )
+                ) {
+                    Text(
+                        text = "Export Data",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Import Data Button
+                OutlinedButton(
+                    onClick = onImport,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Teal600
+                    )
+                ) {
+                    Text(
+                        text = "Import Data",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         // About Dialog
@@ -210,8 +254,8 @@ fun StartScreen(
                 text = {
                     Text(
                         text = "This app was written for the express purpose of me trying to learn different chords in the major and minor keys. There is a chance that as my musical journey continues, I'll end up adding more learning exercises as well.\n\n" +
-                                "This app doesn't farm your data. I don't even capture crash events.\n\n" +
-                                "If the app crashes - restart it 😁\n\nSajjad",
+                                "This app doesn't farm your data 😁\n\n" +
+                                "Sajjad",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 },
