@@ -923,8 +923,23 @@ fun BarChartComposable(
                 valueTextColor = textColor
                 valueTextSize = 10f
                 valueFormatter = object : ValueFormatter() {
-                    override fun getFormattedValue(value: Float): String {
-                        return if (value > 0) value.toInt().toString() else ""
+                    override fun getBarStackedLabel(value: Float, stackedEntry: BarEntry?): String {
+                        if (stackedEntry == null) return ""
+
+                        val values = stackedEntry.yVals
+                        if (values.size < 2) return ""
+
+                        val correct = values[0].toInt()
+                        val wrong = values[1].toInt()
+
+                        // Show label on the topmost segment
+                        // If there are wrong answers, show on wrong segment; otherwise show on correct segment
+                        if (wrong > 0 && value == wrong.toFloat()) {
+                            return "$correct/$wrong"
+                        } else if (wrong == 0 && value == correct.toFloat()) {
+                            return "$correct/$wrong"
+                        }
+                        return ""
                     }
                 }
             }
